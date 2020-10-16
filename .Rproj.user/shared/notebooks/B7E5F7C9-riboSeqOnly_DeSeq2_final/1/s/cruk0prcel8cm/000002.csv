@@ -1,0 +1,20 @@
+"0","```r
+ddsRibo <- DESeqDataSetFromMatrix(countData=as.matrix(rsemRPF_cut), 
+                              colData=pData,
+                              design=~batch+genotype)
+keep <- rowSums(fpm(ddsRibo)>1) >= (dim(ddsRibo)[2]-1)
+ddsRibo_cut <- ddsRibo[keep,]
+dim(ddsRibo_cut)
+```"
+"1","[1] 12083    15
+"
+"0","```r
+ddsRibo_cut <- DESeq(ddsRibo_cut)
+```"
+"1","estimating size factors
+estimating dispersions
+gene-wise dispersion estimates
+mean-dispersion relationship
+final dispersion estimates
+fitting model and testing
+"

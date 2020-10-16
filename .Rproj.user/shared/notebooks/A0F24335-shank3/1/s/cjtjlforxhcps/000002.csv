@@ -1,0 +1,61 @@
+"0","# Load data and libraries"
+"0","rm(list=ls())"
+"0","require(readxl)"
+"0","require(tidyverse)"
+"0","require(tm)"
+"0","require(ggfortify)"
+"0","require(PerformanceAnalytics)"
+"2","Loading required package: PerformanceAnalytics
+"
+"2","Loading required package: xts
+"
+"2","Loading required package: zoo
+"
+"2","
+Attaching package: ‘zoo’
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    as.Date, as.Date.numeric
+
+"
+"2","
+Attaching package: ‘xts’
+
+"
+"2","The following objects are masked from ‘package:dplyr’:
+
+    first, last
+
+"
+"2","
+Attaching package: ‘PerformanceAnalytics’
+
+"
+"2","The following object is masked from ‘package:graphics’:
+
+    legend
+
+"
+"0","require(PCAtools)"
+"2","Loading required package: PCAtools
+"
+"2","Loading required package: lattice
+"
+"2","Loading required package: cowplot
+"
+"2","
+Attaching package: ‘PCAtools’
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    biplot, screeplot
+
+"
+"0","require(reshape2)"
+"0","require(ggbeeswarm)"
+"0","require(EnhancedVolcano)"
+"0","require(RColorBrewer)"
+"0","require(fgsea)"

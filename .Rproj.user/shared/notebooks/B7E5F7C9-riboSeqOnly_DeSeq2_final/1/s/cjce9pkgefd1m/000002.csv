@@ -1,0 +1,40 @@
+"0","```r
+res_fxs <- results(ddsRibo_cut, contrast=c(\"genotype\",\"FXS\",\"WT\"))
+res_fxs_shrunk <- lfcShrink(ddsRibo_cut, contrast=c(\"genotype\",\"FXS\",\"WT\"), res=res_fxs)
+res_fxs_shrunk <- res_fxs_shrunk[order(res_fxs_shrunk$padj),]
+summary(res_fxs_shrunk, alpha=pVal)
+```"
+"1","
+out of 12083 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 51, 0.42%
+LFC < 0 (down)     : 153, 1.3%
+outliers [1]       : 0, 0%
+low counts [2]     : 1172, 9.7%
+(mean count < 89)
+[1] see 'cooksCutoff' argument of ?results
+[2] see 'independentFiltering' argument of ?results
+"
+"0","```r
+write.csv(res_fxs, file = \"~/Google Drive/seqTables/ribo/fxsVwt_all.csv\", quote = FALSE)
+write.csv(res_fxs_shrunk, file = \"~/Google Drive/seqTables/ribo/fxsVwt_all_shrunk.csv\", quote = FALSE)
+res_fxs_sig <- processDeSeq2results(res_fxs_shrunk)
+summary(res_fxs_sig)
+```"
+"1","
+out of 204 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 51, 25%
+LFC < 0 (down)     : 153, 75%
+outliers [1]       : 0, 0%
+low counts [2]     : 0, 0%
+(mean count < 89)
+[1] see 'cooksCutoff' argument of ?results
+[2] see 'independentFiltering' argument of ?results
+"
+"0","```r
+write.csv(res_fxs_sig, file = \"~/Google Drive/seqTables/ribo/fxsVwt_sigOnly_shrunk.csv\", quote = FALSE)
+res_fxs_i <- results(ddsRibo_cut, contrast=c(\"genotype\",\"FXS\",\"WT\"), independentFiltering = FALSE)
+res_fxs_i_shrunk <- lfcShrink(ddsRibo_cut, contrast=c(\"genotype\",\"FXS\",\"WT\"), res=res_fxs_i)
+write.csv(res_fxs_i_shrunk, file = \"~/Google Drive/seqTables/ribo/fxsVwt_all_if_off_shrunk.csv\", quote = FALSE)
+```"

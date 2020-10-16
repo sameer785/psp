@@ -1,0 +1,23 @@
+"0","```r
+writeLFCsByLenBin <- function(binLenFile){
+  lens.bin6 <- read.csv(binLenFile)
+  int.fxs.bin6 <- intersect(lens.bin6$x, rownames(res_fxs_shrunk))
+  int.dko.bin6 <- intersect(lens.bin6$x, rownames(res_dko_shrunk))
+  lens.bin6 <- read.csv(binLenFile)
+  res_fxs.bin6 <- res_fxs_shrunk[int.fxs.bin6,]
+  res_dko.bin6 <- res_dko_shrunk[int.dko.bin6,]
+  fxsIntDko.bin6 <- data.frame(fxs=res_fxs.bin6$log2FoldChange, dko=res_dko.bin6$log2FoldChange, row.names = rownames(res_fxs.bin6))
+}
+binTab <- writeLFCsByLenBin(\"~/bioChem/longGenes_bin6.csv\")
+write.csv(binTab, \"~/bioChem/results/ribo/LFC_fxs_dko_bin6.csv\", quote=FALSE)
+binTab <- writeLFCsByLenBin(\"~/bioChem/longGenes_bin5.csv\")
+write.csv(binTab, \"~/bioChem/results/ribo/LFC_fxs_dko_bin5.csv\", quote=FALSE)
+binTab <- writeLFCsByLenBin(\"~/bioChem/longGenes_bin4.csv\")
+write.csv(binTab, \"~/bioChem/results/ribo/LFC_fxs_dko_bin4.csv\", quote=FALSE)
+binTab <- writeLFCsByLenBin(\"~/bioChem/longGenes_bin3.csv\")
+write.csv(binTab, \"~/bioChem/results/ribo/LFC_fxs_dko_bin3.csv\", quote=FALSE)
+binTab <- writeLFCsByLenBin(\"~/bioChem/longGenes_bin2.csv\")
+write.csv(binTab, \"~/bioChem/results/ribo/LFC_fxs_dko_bin2.csv\", quote=FALSE)
+binTab <- writeLFCsByLenBin(\"~/bioChem/longGenes_bin1.csv\")
+write.csv(binTab, \"~/bioChem/results/ribo/LFC_fxs_dko_bin1.csv\", quote=FALSE)
+```"

@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "makeStratifiedCumLfcPlot <- function(tbl){\n  linSiz = .75\n  axisLabSize = 18\n  legendLabSize = 18\n  \n  th <- theme_bw(base_size = 24) +\n    \n    theme(\n      legend.background = element_rect(),\n      \n      # axis text\n      axis.text.x = element_text(\n        angle = 0,\n        size = axisLabSize,\n        vjust = 1),\n      axis.text.y = element_text(\n        angle = 0,\n        size = axisLabSize,\n        vjust = 1),\n      axis.title = element_text(\n        size = axisLabSize),\n      \n      # legend\n      legend.key = element_blank(),\n      legend.text = element_text(\n        size = legendLabSize),\n      title = element_text(\n        size = legendLabSize),\n      legend.title = element_blank())\n  \n  sa <- data.frame(x=tbl$logFC.KO.over.WT, g=tbl$lfcBins)\n  gp <- ggplot(sa, aes(x, colour=g))\n  gp <- gp + th\n  gp <- gp + stat_ecdf(size=linSiz)\n  gp <- gp + geom_hline(yintercept=0.5, linetype=\"dashed\")\n  gp <- gp + geom_vline(xintercept=0, linetype=\"dashed\")\n  gp <- gp + theme(legend.text=element_text(size=18))\n  gp <- gp + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())\n  #cumPlotCols <- c(\"#377EB8\", \"#FAAA33\", \"#4DAF4A\", \"#FF7F00\", \"#E41A1C\", \"#984EA3\")\n  #cumPlotCols <- c(\"#78CDFF\", \"#6193E8\", \"#6B7BFF\", \"#FF14F7\", \"#FF4935\", \"#80251B\")\n  cumPlotCols <- c(\"#9421FF\", \"#7C94FF\", \"#91FF10\", \"#36FF06\", \"#FF701D\", \"#FF1132\")\n  gp <- gp + scale_colour_manual(values = cumPlotCols)\n  gp <- gp + xlab(bquote(~Log[2]~ \"fold change\"))\n  gp <- gp + ylab(\"Cumulative probability\")\n  gp <- gp + theme(legend.title=element_blank())\n  gp <- gp + theme(legend.position = c(0.95,0.25))\n  #gp <- gp + coord_cartesian(xlim=c(-.5,.5))\n  gp <- gp + theme(axis.line = element_line(size = .8), panel.border = element_blank(), panel.background = element_blank())\n  gp <- gp + scale_x_continuous(breaks = scales::pretty_breaks(n=10))#breaks=c(-.7,-.5,0,.5,.7)\n  gp <- gp + scale_y_continuous(breaks = scales::pretty_breaks(n = 10))\n  gp\n  \n  \n  \n}",
+    "created" : 1602855089692.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1996816371",
+    "id" : "8E42975F",
+    "lastKnownWriteTime" : 1602856555,
+    "last_content_update" : 1602856555972,
+    "path" : "~/Desktop/broad/psp/functions/makeStratifiedCumLfcPlot.R",
+    "project_path" : "functions/makeStratifiedCumLfcPlot.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

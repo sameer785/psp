@@ -1,0 +1,3 @@
+"0","# Lfcbins has changed now. Stratifying LFC cum freq w/ CDS length bins. "
+"0","lfcCumFreqPlot <- makeStratifiedCumLfcPlot(resLen)"
+"0","lfcCumFreqPlot"

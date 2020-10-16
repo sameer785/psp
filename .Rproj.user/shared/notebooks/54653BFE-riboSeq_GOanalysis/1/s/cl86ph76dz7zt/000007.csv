@@ -1,0 +1,16 @@
+"0","wtVsFxs <- getTopGoTerms(""~/bioChem/results/ribo/wtVfxs_all.csv"", 1)
+"
+"2","Parsed with column specification:
+cols(
+  ensembl_gene_id = col_character(),
+  external_gene_name = col_character(),
+  hsapiens_homolog_associated_gene_name = col_character()
+)
+"
+"2","Column `X`/`external_gene_name` joining factor and character vector, coercing into character vector"
+"2","There are ties in the preranked stats (3.91% of the list).
+The order of those tied genes will be arbitrary, which may produce unexpected results."
+"1","
+Restarting R session...
+
+"

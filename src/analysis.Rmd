@@ -1,0 +1,186 @@
+---
+title: "Trio PSD proteome analysis"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+Sameer Aryal 
+Postdoctoral Associate
+Sheng Laboratory
+Broad Institute of MIT and Harvard
+
+Oct. 9, 2020
+
+How does genetically removing Trio alter the postsynaptic density (PSD) proteome?
+Examining TMT labeled PSD proteome from WT, Trio/+, and Trio/Trio mice. 
+Experiment carried out by Borislav Dejanovic. 
+
+```{r}
+rm(list=ls())
+require(readxl)
+require(tidyverse)
+require(tm)
+require(ggfortify)
+require(reshape2)
+require(ggbeeswarm)
+require(EnhancedVolcano)
+require(RColorBrewer)
+require(fgsea)
+```
+Loading data and helper functions. 
+
+```{r}
+files.sources = list.files("../functions" , full.names = TRUE)
+invisible(lapply(files.sources, source))
+trio.xls <- read_xlsx("../data/results_PSD-Trio-proteome_Two-sample_mod_T_2020-07-24.xlsx")
+trio.xls <- trio.xls %>% drop_na(logFC.WT.over.KO)
+```
+Does the data have any underlying structure?
+
+```{r}
+trio.abundances <- trio.xls %>% dplyr::select(starts_with("Trio_PSD_TMT11_Proteome.."))
+
+#Renaming columns for clarity
+trio.sampleSheet <- makeSampleSheet(trio.abundances)
+colnames(trio.abundances) <- trio.sampleSheet$cleanId
+
+
+# Remove any rows with NA
+trio.abundances.clean <- na.omit(trio.abundances)
+trio.abundances.pca.plot <- makePcaPlot(trio.abundances.clean, trio.sampleSheet$color)
+trio.abundances.pca.plot
+
+```
+
+
+
+Does log transformation reveal any underlying structure?
+
+```{r}
+###
+trio.abundances.clean.log <- log(trio.abundances.clean+abs(min(trio.abundances.clean))+1)
+trio.abundances.clean.log.pca.plot <- makePcaPlot(trio.abundances.clean.log, trio.sampleSheet$color)
+trio.abundances.clean.log.pca.plot
+
+# No inherent structure in the data
+# Samples do not vary primarily by genotype
+```
+
+
+
+How does expresssion of Trio vary with genotype?
+```{r}
+# Check abundance of Trio protein
+trio.trio.abundance.m <- getAbundanceOfProtein(trio.xls, 
+                                             'Q0KL02',
+                                             "Trio_PSD_TMT11_Proteome..", 
+                                             trio.sampleSheet)
+trio.trio.abundance.plot <- makeAbundancePlot(trio.trio.abundance.m)
+trio.trio.abundance.plot
+```
+
+The Broad modeling (moderated t-test followed by FDR adjustment) finds that no genes, including Trio, are significantly altered after FDR adjustment of p-values. The following plot shows the distribution of FDR adjusted p-values. 
+
+```{r}
+plot(density(trio.xls$adj.P.Val.WT.over.KO), xlim=c(0,1))
+```
+I am therefore using nominal p-values for further analysis of the data. Here is how the nominal p-value distribution looks like.
+
+```{r}
+plot(density(trio.xls$P.Value.WT.over.KO), xlim=c(0,1))
+```
+
+Since we are using nominal p-values, the chances of getting false positive hits is quite high. The number of proteins with p-values below 0.05 is:
+```{r}
+sum(trio.xls$P.Value.WT.over.KO < 0.05)
+```
+
+
+
+Which proteins are the most consistently altered across replicates? Plotting LFC(KO/WT) against nominal p-value.
+
+```{r}
+#Plotting FDR adjusted p value against LFC
+trio.xls <- trio.xls %>% dplyr::mutate(logFC.KO.over.WT = logFC.WT.over.KO*(-1))
+vPlot <- makeVolcanoPlot(trio.xls)
+vPlot
+```
+
+
+Labeling the genes that Borislav has picked out for further confirmation and has validated antibodies for. 
+```{r}
+borislavLabels <- c("Trio", "Grin1", "Nrcam", "Dlgap1", "Clu", "Prrt1", "Zdhhc5", "Nono", "Cers6", "Uba52", "Rpl29")
+vPlot2 <- makeVolcanoPlot(trio.xls, borislavLabels)
+vPlot2
+```
+
+
+Does the MW of the protein dictate its LFC? To examine this, I divided all proteins into 6 color coded bins. The bins are unequal in size, so that I can see any representative effects at extremes. Bin 1 harbors the proteins with the smallest MW, bin 6 the largest MWs. 
+```{r}
+trio.xls <- trio.xls %>% dplyr::mutate(log_protein_mw = log(protein_mw))
+trio.xls <- setupBins(trio.xls, "log_protein_mw", c(0,9.5,10.25,11.25,12,12.5,16))
+keyvals <- colorizeBins(trio.xls)
+vPlot3 <- makeVolcanoPlot(trio.xls, NULL, 0.8, keyvals, c(0.1,0.9))
+vPlot3
+```
+
+
+It does not look like the MW is associated with LFC. To examine this more systematically, I am using the same bins and plotting the cumulative frequency vs. LFC in each bin. 
+```{r}
+#Stratify cumulative frequency by protein MW
+lfcCumFreqPlot <- makeStratifiedCumLfcPlot(trio.xls)
+lfcCumFreqPlot
+```
+
+
+In each bin, proteins are as likely to upregulated as they are to be downregulated. Therefore, the MW of a protein does not dictate its LFC. Neither large nor small proteins aren't especially overabundant in Trio KO mice. 
+
+
+MW is related but not wholly representative of the number of amino acids in a protein. Are the alterations in protein expression at the PSD with deletion of Trio associated with the number of amino acids in the protein (the protein length)?
+```{r}
+#Stratify by CDS length
+geneLengths <- read.csv("~/bioChem/S3.genes.results", sep="\t", header=T)
+geneLengths <- geneLengths[,c(1:3)]
+resLen <- inner_join(trio.xls, geneLengths, by=c("geneSymbol"="gene_id"))
+resLen$aaSize <- resLen$length/3
+resLen$logAAsize <- log2(resLen$aaSize)
+##### CDS length distribution is shifted left in the PSD compared to tissue RF. Why??
+resLen <- setupBins(resLen, "logAAsize", c(0,6.5,7.5,9,10.5,12,16))
+keyvals <- colorizeBins(resLen)
+vPlot4 <- makeVolcanoPlot(resLen, NULL, 0.8, keyvals, c(0.1,0.9))
+vPlot4
+```
+
+
+It does not look like LFC is dependent on protein length either. Analysing this more systematically now. 
+```{r}
+# Lfcbins has changed now. Stratifying LFC cum freq w/ CDS length bins. 
+lfcCumFreqPlot <- makeStratifiedCumLfcPlot(resLen)
+lfcCumFreqPlot
+```
+We can conclude that protein length is not associated with alteration in protein expression. 
+
+Carrying out Gene Set Enrichment Analysis now. 
+```{r}
+# Gene ontology analysis
+trio.xls <- trio.xls %>% mutate(t.KO.over.WT = t.WT.over.KO*(-1))
+goPathways <- "~/Google Drive/seqTables/geneSets/c5.all.v7.0.symbols.gmt"
+trio.go <- doGoAnalysis(trio.xls, goPathways)
+trio.go$up
+trio.go$down
+```
+
+
+```{r}
+trio.trio.abundance.m <- getAbundanceOfProtein(trio.xls, 
+                                             'Q9CZR3',
+                                             "Trio_PSD_TMT11_Proteome..", 
+                                             trio.sampleSheet)
+trio.trio.abundance.plot <- makeAbundancePlot(trio.trio.abundance.m)
+trio.trio.abundance.plot
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file).

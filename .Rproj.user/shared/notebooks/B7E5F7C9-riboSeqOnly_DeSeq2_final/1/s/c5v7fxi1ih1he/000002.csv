@@ -1,0 +1,6 @@
+"0","```r
+rld <- vst(ddsRibo_cut)
+source(\"~/Documents/R/modPlotPCA.R\")
+modPlotPCA(rld, intgroup=c(\"genotype\"))
+ggsave(\"~/Google Drive/thesis/figures/pca_ribo_genotypes.pdf\", width = 8, height = 6, units = \"in\")
+```"

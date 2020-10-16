@@ -1,0 +1,3 @@
+"0","#Stratify cumulative frequency by protein MW"
+"0","lfcCumFreqPlot <- makeStratifiedCumLfcPlot(trio.xls)"
+"0","lfcCumFreqPlot"

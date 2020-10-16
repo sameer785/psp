@@ -1,0 +1,9 @@
+"0","```r
+######
+fxsSigNegIntDko<-data.frame(fxs=res_fxs_sig_neg$log2FoldChange,dko=res_fxs_sig_neg_int_dko$log2FoldChange,row.names=rownames(res_fxs_sig_neg))
+write.csv(fxsSigNegIntDko, \"~/bioChem/results/ribo/LFC_fxs_sig_neg_int_dko.csv\", quote=FALSE)
+fxsSigPosIntDko<-data.frame(fxs=res_fxs_sig_pos$log2FoldChange, dko=res_fxs_sig_pos_int_dko$log2FoldChange,  row.names=rownames(res_fxs_sig_pos))
+write.csv(fxsSigPosIntDko, \"~/bioChem/results/ribo/LFC_fxs_sig_pos_int_dko.csv\", quote=FALSE)
+nb <- gather(fxsSigNegIntDko)
+ggplot(nb, aes(x=key, y=value)) + geom_violin(aes(color=key))
+```"

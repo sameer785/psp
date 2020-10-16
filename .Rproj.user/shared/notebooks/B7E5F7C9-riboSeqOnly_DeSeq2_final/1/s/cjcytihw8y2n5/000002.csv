@@ -1,0 +1,7 @@
+"0","```r
+res_total_sk<- results(ddsTotal_cut, contrast=c(\"genotypeTotal\",\"S6K1\",\"WT\"), cooksCutoff = 0.5)
+#res_total_sk_shrunk <- lfcShrink(ddsTotal_cut, contrast=c(\"genotypeTotal\",\"S6K1\",\"WT\"), res = res_total_sk)
+summary(res_total_sk)
+res_total_sk_sig <- processDeSeq2results(res_total_sk)
+write.csv(res_total_sk_sig, \"~/aniso/results/total/aniso_total_wtVs6k1.csv\", quote = FALSE)
+```"

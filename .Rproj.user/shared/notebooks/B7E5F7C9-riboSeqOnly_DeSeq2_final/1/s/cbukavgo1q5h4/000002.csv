@@ -1,0 +1,15 @@
+"0","```r
+summary(res_fxs_dko)
+
+```"
+"1","
+out of 12083 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 6, 0.05%
+LFC < 0 (down)     : 3, 0.025%
+outliers [1]       : 0, 0%
+low counts [2]     : 0, 0%
+(mean count < 30)
+[1] see 'cooksCutoff' argument of ?results
+[2] see 'independentFiltering' argument of ?results
+"

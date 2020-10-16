@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "doGoAnalysis <- function(tbl, pathway){\n  # To Convert mouse gene names to human\n  # Save only those whose human and mouse names match\n  bm<-read_csv(\"~/bioChem/ensemblId_mouseGeneName_humanGeneName.csv\")\n  res <- inner_join(tbl, bm, by=c(\"geneSymbol\"=\"external_gene_name\"))\n  \n  # Select moderated t-statistic (KO/WT) and Ensembl external gene name\n  # For multiple proteins that have same gene name\n  # Select row with the largest absolute t-statistic\n  psd.res <- res %>% \n    dplyr::select(hsapiens_homolog_associated_gene_name, t.KO.over.WT) %>% \n    na.omit() %>% \n    distinct() %>% \n    group_by(hsapiens_homolog_associated_gene_name) %>% \n    slice_max(abs(t.KO.over.WT))\n  \n  ranks <- deframe(psd.res)\n  pathways.go <- gmtPathways(pathway)\n  fgseaRes.psd <- fgsea(pathways=pathways.go, stats=ranks, nperm=1000)\n  \n  fgseaRes.psd.up <- fgseaRes.psd %>%\n    as_tibble() %>%\n    arrange(desc(NES), padj) %>%\n    dplyr::select(-ES, -nMoreExtreme) %>%\n    DT::datatable()\n  \n  fgseaRes.psd.down <- fgseaRes.psd %>%\n    as_tibble() %>%\n    arrange(NES, padj) %>%\n    dplyr::select(-ES, -nMoreExtreme) %>%\n    DT::datatable()\n  \n  return(list(\"up\"=fgseaRes.psd.up, \"down\"=fgseaRes.psd.down))\n  \n}",
+    "created" : 1602804406281.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3210515854",
+    "id" : "D75D0EC0",
+    "lastKnownWriteTime" : 1602806717,
+    "last_content_update" : 1602806717683,
+    "path" : "~/Desktop/broad/psp/functions/doGoAnalysis.R",
+    "project_path" : "functions/doGoAnalysis.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

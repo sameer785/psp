@@ -1,0 +1,29 @@
+"0","```r
+##################
+pVal = 0.1 # p-value threhold for FDR for DE
+#################
+sampleInfo <- read.csv(\"~/Google Drive/seqTables/ncbi_geo_sub/sampleInfo/ribo_sampleInfo.csv\")
+sampleInfo
+```"
+"1","   sampleId genotype batch
+1        S5      DKO     1
+2        S6     S6K1     1
+3        S7       WT     2
+4        S8      FXS     2
+5        S9      FXS     2
+6       S10     S6K1     2
+7       S11      FXS     3
+8       S12       WT     3
+9       S13     S6K1     3
+10      S14      DKO     3
+11      S15       WT     4
+12      S16      FXS     4
+13      S17      FXS     4
+14      S18      DKO     4
+15      S19       WT     4
+"
+"0","```r
+#rsemRPF <-read.table(\"~/bioChem/all.rsem.gene.summary.counts.txt\", sep=\"\t\", header=TRUE, row.names=1, stringsAsFactors = TRUE)
+rsemRPF <-read.table(\"~/Google Drive/seqTables/ncbi_geo_sub/counts/ribo_cds_counts.txt\", sep=\"\t\", header=TRUE, row.names=1, stringsAsFactors = TRUE)
+rsemRPF<-rsemRPF[,naturalorder(colnames(rsemRPF))]
+```"

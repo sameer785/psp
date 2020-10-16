@@ -1,0 +1,4 @@
+"0","#Plotting FDR adjusted p value against LFC"
+"0","shank3.xls <- shank3.xls %>% dplyr::mutate(logFC.KO.over.WT = logFC.WT.over.KO*(-1))"
+"0","vPlot <- makeVolcanoPlot(shank3.xls)"
+"0","vPlot"

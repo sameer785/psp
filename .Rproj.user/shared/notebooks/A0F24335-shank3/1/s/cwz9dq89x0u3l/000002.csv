@@ -1,0 +1,10 @@
+"0","# Check abundance of shank3 protein"
+"0","# Major isoform?"
+"0","shank3.shank3.abundance.m <- getAbundanceOfProtein(shank3.xls, "
+"0","                                             'A0A0A0MQD5',"
+"0","                                             ""Shank3_PSD_TMT11_Proteome.."", "
+"0","                                             shank3.sampleSheet)"
+"2","No id variables; using all as measure variables
+"
+"0","shank3.shank3.abundance.plot <- makeAbundancePlot(shank3.shank3.abundance.m)"
+"0","shank3.shank3.abundance.plot"

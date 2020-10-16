@@ -1,0 +1,9 @@
+"0","# Isoform 9"
+"0","shank3.shank3.iso.abundance.m <- getAbundanceOfProtein(shank3.xls, "
+"0","                                             ""Q4ACU6"","
+"0","                                             ""Shank3_PSD_TMT11_Proteome.."", "
+"0","                                             shank3.sampleSheet)"
+"2","No id variables; using all as measure variables
+"
+"0","shank3.shank3.iso.abundance.plot <- makeAbundancePlot(shank3.shank3.iso.abundance.m)"
+"0","shank3.shank3.iso.abundance.plot"

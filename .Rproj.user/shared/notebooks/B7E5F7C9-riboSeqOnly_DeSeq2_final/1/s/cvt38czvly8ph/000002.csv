@@ -1,0 +1,9 @@
+"0","```r
+ddsTotal <- DESeqDataSetFromMatrix(countData=as.matrix(countTotal_cut), 
+                              colData=pDataTotal,
+                              design=~batchTotal+genotypeTotal)
+keep <- rowSums(fpm(ddsTotal)>1) >= (dim(ddsTotal)[2]-1)
+ddsTotal_cut <- ddsTotal[keep,]
+dim(ddsTotal_cut)
+ddsTotal_cut <- DESeq(ddsTotal_cut)
+```"

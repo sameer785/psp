@@ -1,0 +1,13 @@
+"0","```r
+countTotal <- read.csv(\"/Users/SA/aniso/rsemTables/total/aniso.total.star.rsem.gene.summary.counts.txt\", sep=\"\t\", row.names = 1)
+countTotal <- countTotal[,naturalorder(colnames(countTotal))]
+#countTotal_cut <- countTotal[,-c(1:4)]
+countTotal_cut <- countTotal
+genotypeTotal <- factor(rep(c(\"WT\", \"FXS\", \"S6K1\", \"DKO\"), 4), levels=c(\"WT\", \"FXS\", \"S6K1\", \"DKO\"))
+#batchTotal <- factor(c(rep(2,4), rep(3,4), rep(4,4)))
+batchTotal <- factor(c(rep(1,4), rep(2,4), rep(3,4), rep(4,4)))
+#batchTotal <- factor(c(rep(1,4), rep(2,12)))
+
+pDataTotal <- data.frame(genotypeTotal, batchTotal, row.names = colnames(countTotal_cut))
+pDataTotal
+```"

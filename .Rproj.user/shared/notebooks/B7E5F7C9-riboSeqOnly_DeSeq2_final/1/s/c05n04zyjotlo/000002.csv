@@ -1,0 +1,4 @@
+"0","```r
+modPlotPCA(rld, intgroup=c(\"batch\"))
+ggsave(\"~/Google Drive/thesis/figures/pca_ribo_batch.pdf\", width = 8, height = 6, units = \"in\")
+```"

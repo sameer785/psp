@@ -1,0 +1,5 @@
+"0","shank3.xls <- shank3.xls %>% dplyr::mutate(log_protein_mw = log(protein_mw))"
+"0","shank3.xls <- setupBins(shank3.xls, ""log_protein_mw"", c(0,9.5,10.25,11.25,12,12.5,16))"
+"0","keyvals <- colorizeBins(shank3.xls)"
+"0","vPlot3 <- makeVolcanoPlot(shank3.xls, NULL, 0.8, keyvals)"
+"0","vPlot3"

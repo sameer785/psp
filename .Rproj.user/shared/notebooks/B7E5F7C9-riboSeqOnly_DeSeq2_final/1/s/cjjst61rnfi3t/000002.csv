@@ -1,0 +1,10 @@
+"0","```r
+res_total_fxs<- results(ddsTotal_cut, contrast=c(\"genotypeTotal\",\"FXS\",\"WT\"))
+res_total_fxs_shrunk <- lfcShrink(ddsTotal_cut, contrast=c(\"genotypeTotal\",\"FXS\",\"WT\"), res = res_total_fxs)
+summary(res_total_fxs)
+res_total_fxs[\"Fmr1\",]
+res_total_fxs_sig <- processDeSeq2results(res_total_fxs)
+write.csv(res_total_fxs_sig, \"~/aniso/results/total/aniso_total_wtVfxs_star.csv\", quote = FALSE)
+summary(res_total_fxs_sig)
+rownames(res_total_fxs_sig)
+```"
