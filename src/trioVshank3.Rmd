@@ -1,0 +1,49 @@
+---
+title: "Correlation between Trio and Shank3"
+output: html_notebook
+---
+
+
+```{r}
+trio.xls <- read_xlsx("../data/results_PSD-Trio-proteome_Two-sample_mod_T_2020-07-24.xlsx")
+trio.xls <- trio.xls %>% drop_na(logFC.WT.over.KO)
+shank3.xls <- read_xlsx("../data/results_PSD-Shank3-proteome_Two-sample_mod_T_2020-07-22.xlsx")
+shank3.xls <- shank3.xls %>% drop_na(logFC.WT.over.KO)
+```
+The number of proteins measured in Trio PSD is:
+```{r}
+dim(trio.xls)[1]
+```
+The number of proteins measured in Shank3 PSD is:
+```{r}
+dim(shank3.xls)[1]
+```
+
+The number of proteins measured across both experiments is:
+```{r}
+sharedIds <- intersect(trio.xls$id, shank3.xls$id)
+length(sharedIds)
+```
+699 proteins measured in Trio PSD but not Shank3. 1534 proteins measured in Shank3 PSD but not Trio.
+```{r}
+length(setdiff(trio.xls$id, shank3.xls$id))
+length(setdiff(shank3.xls$id, trio.xls$id))
+```
+```{r}
+#trio.shared <- trio.xls %>% subset(id %in% sharedIds)
+#shank3.shared <- shank3.xls %>% subset(id %in% sharedIds)
+trio.xls <- trio.xls %>% dplyr::mutate(logFC.KO.over.WT = logFC.WT.over.KO*(-1))
+shank3.xls <- shank3.xls %>% dplyr::mutate(logFC.KO.over.WT = logFC.WT.over.KO*(-1))
+joint <- inner_join(trio.xls, shank3.xls, by='id')
+lim <- c(-2,2)
+plot(joint$logFC.KO.over.WT.x, joint$logFC.KO.over.WT.y, xlim=lim, ylim=lim)
+cor(joint$logFC.KO.over.WT.x, joint$logFC.KO.over.WT.y)
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

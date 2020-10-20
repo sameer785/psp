@@ -140,7 +140,7 @@ In each bin, proteins are as likely to upregulated as they are to be downregulat
 MW is related but not wholly representative of the number of amino acids in a protein. Are the alterations in protein expression at the PSD with deletion of Trio associated with the number of amino acids in the protein (the protein length)?
 ```{r}
 #Stratify by CDS length
-geneLengths <- read.csv("~/bioChem/S3.genes.results", sep="\t", header=T)
+geneLengths <- read.csv("~/Google Drive/geneSets/geneLengths/S3.genes.results", sep="\t", header=T)
 geneLengths <- geneLengths[,c(1:3)]
 resLen <- inner_join(trio.xls, geneLengths, by=c("geneSymbol"="gene_id"))
 resLen$aaSize <- resLen$length/3
@@ -165,22 +165,51 @@ Carrying out Gene Set Enrichment Analysis now.
 ```{r}
 # Gene ontology analysis
 trio.xls <- trio.xls %>% mutate(t.KO.over.WT = t.WT.over.KO*(-1))
-goPathways <- "~/Google Drive/seqTables/geneSets/c5.all.v7.0.symbols.gmt"
+goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
 trio.go <- doGoAnalysis(trio.xls, goPathways)
 trio.go$up
 trio.go$down
 ```
-
-
 ```{r}
-trio.trio.abundance.m <- getAbundanceOfProtein(trio.xls, 
-                                             'Q9CZR3',
-                                             "Trio_PSD_TMT11_Proteome..", 
-                                             trio.sampleSheet)
-trio.trio.abundance.plot <- makeAbundancePlot(trio.trio.abundance.m)
-trio.trio.abundance.plot
+goPathways2 <- "~/Google Drive/geneSets/mSigDb/v7_2/curated/c2.cp.kegg.v7.2.symbols.gmt"
+trio.go.kegg <- doGoAnalysis(trio.xls, goPathways2)
+trio.go.kegg$up
+trio.go.kegg$down
 ```
 
+Plotting genes associated with translation initiation GO
+```{r}
+rnaProcessing <- str_to_title(trio.go$up$x$data$leadingEdge[[18]]) ### Translation initiaton
+rnaProcessing.sample <- sample(rnaProcessing, size = min(length(rnaProcessing), 30))
+vPlot5 <- makeVolcanoPlot(trio.xls, rnaProcessing.sample)
+vPlot5
+```
+
+
+Plotting genes associated with mitochondrial inner membrane GO
+
+```{r}
+mito <- str_to_title(trio.go$down$x$data$leadingEdge[[4]]) ### Translation initiaton
+mito.sample <- sample(mito, size = min(length(mito), 30))
+vPlot6 <- makeVolcanoPlot(trio.xls, mito.sample)
+vPlot6
+```
+
+
+Plotting genes associated with synapse assembly GO
+```{r}
+syn <- str_to_title(trio.go$down$x$data$leadingEdge[[14]]) ### Translation initiaton
+syn.sample <- sample(syn, size =  min(length(syn), 30))
+vPlot7 <- makeVolcanoPlot(trio.xls, syn.sample)
+vPlot7
+```
+Plotting genes associated with chromatin binding GO
+```{r}
+chromProcessing <- str_to_title(trio.go$up$x$data$leadingEdge[[69]]) ### Translation initiaton
+chromProcessing.sample <- sample(chromProcessing, size =  min(length(chromProcessing), 30))
+vPlot8 <- makeVolcanoPlot(trio.xls, chromProcessing.sample)
+vPlot8
+```
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
 
 When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file).

@@ -23,7 +23,6 @@ require(readxl)
 require(tidyverse)
 require(tm)
 require(ggfortify)
-require(PerformanceAnalytics)
 require(PCAtools)
 require(reshape2)
 require(ggbeeswarm)
@@ -151,7 +150,7 @@ In each bin, proteins are as likely to upregulated as they are to be downregulat
 MW is related but not wholly representative of the number of amino acids in a protein. Are the alterations in protein expression at the PSD with deletion of Trio associated with the number of amino acids in the protein (the protein length)?
 ```{r}
 #Stratify by CDS length
-geneLengths <- read.csv("~/bioChem/S3.genes.results", sep="\t", header=T)
+geneLengths <- read.csv("~/Google Drive/geneSets/geneLengths/S3.genes.results", sep="\t", header=T)
 geneLengths <- geneLengths[,c(1:3)]
 resLen <- inner_join(shank3.xls, geneLengths, by=c("geneSymbol"="gene_id"))
 resLen$aaSize <- resLen$length/3
@@ -174,12 +173,66 @@ We can conclude that protein length is not associated with alteration in protein
 Carrying out Gene Set Enrichment Analysis now. 
 ```{r}
 shank3.xls <- shank3.xls %>% mutate(t.KO.over.WT = t.WT.over.KO*(-1))
-goPathways <- "~/Google Drive/seqTables/geneSets/c5.all.v7.0.symbols.gmt"
+goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.go.v7.2.symbols.gmt"
 shank3.go <- doGoAnalysis(shank3.xls, goPathways)
 shank3.go$up
 shank3.go$down
 ```
+```{r}
+goPathways2 <- "~/Google Drive/geneSets/mSigDb/v7_2/curated/c2.cp.kegg.v7.2.symbols.gmt"
+shank3.go.kegg <- doGoAnalysis(shank3.xls, goPathways2)
+shank3.go.kegg$up
+shank3.go.kegg$down
+```
 
+
+What happens if you remove Shank3 from GO analyses? 
+```{r}
+shank3.xls.tmp <- shank3.xls %>% filter(geneSymbol !='Shank3')
+shank3.go.tmp <- doGoAnalysis(shank3.xls.tmp, goPathways)
+shank3.go.tmp$up
+shank3.go.tmp$down
+```
+
+Gene ontologies associated with glutamatergic function are downregulated even when omitting Shank3. 
+
+
+Plotting genes associated with RNA splicing GO
+
+```{r}
+subsetGenes <- str_to_title(shank3.go$up$x$data$leadingEdge[[3]]) ### Translation initiaton
+subsetGenes.sample <- sample(subsetGenes, min(length(subsetGenes), size = 30))
+vPlot5 <- makeVolcanoPlot(shank3.xls, subsetGenes.sample)
+vPlot5
+```
+
+Plotting genes associated with cytosolic ribosome GO
+
+```{r}
+subsetGenes <- str_to_title(shank3.go$up$x$data$leadingEdge[[13]]) ### Translation initiaton
+subsetGenes.sample <- sample(subsetGenes, min(length(subsetGenes), size = 30))
+vPlot6 <- makeVolcanoPlot(shank3.xls, subsetGenes.sample)
+vPlot6
+```
+
+
+Plotting genes associated with glutamate receptor signaling GO
+
+```{r}
+subsetGenes <- str_to_title(shank3.go$down$x$data$leadingEdge[[1]]) ### Translation initiaton
+subsetGenes.sample <- sample(subsetGenes, min(length(subsetGenes), size = 30))
+vPlot7 <- makeVolcanoPlot(shank3.xls, subsetGenes.sample)
+vPlot7
+```
+
+Plotting genes associated with antigen processing GO
+
+```{r}
+subsetGenes <- str_to_title(shank3.go$down$x$data$leadingEdge[[10]]) 
+subsetGenes.sample <- sample(subsetGenes, min(length(subsetGenes), size = 30))
+vPlot8 <- makeVolcanoPlot(shank3.xls, subsetGenes.sample)
+vPlot8
+```
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
 
 When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file).
