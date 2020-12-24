@@ -1,9 +1,0 @@
-"0","# Check abundance of Trio protein"
-"0","trio.trio.abundance.m <- getAbundanceOfProtein(trio.xls, "
-"0","                                             'Q0KL02',"
-"0","                                             ""Trio_PSD_TMT11_Proteome.."", "
-"0","                                             trio.sampleSheet)"
-"2","No id variables; using all as measure variables
-"
-"0","trio.trio.abundance.plot <- makeAbundancePlot(trio.trio.abundance.m)"
-"0","trio.trio.abundance.plot"

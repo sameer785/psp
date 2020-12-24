@@ -29,6 +29,7 @@ require(ggbeeswarm)
 require(EnhancedVolcano)
 require(RColorBrewer)
 require(fgsea)
+require(ComplexHeatmap)
 ```
 
 ```{r}
@@ -36,6 +37,8 @@ files.sources = list.files("../functions" , full.names = TRUE)
 invisible(lapply(files.sources, source))
 shank3.xls <- read_xlsx("../data/results_PSD-Shank3-proteome_Two-sample_mod_T_2020-07-22.xlsx")
 shank3.xls <- shank3.xls %>% drop_na(logFC.WT.over.KO)
+#shank3.xls <- shank3.xls %>% filter(Shank3_PSD_TMT11_Proteome.numSpectra > 5)
+
 ```
 Does the data have any underlying structure?
 
@@ -109,7 +112,7 @@ sum(shank3.xls$P.Value.WT.over.KO < 0.05)
 ```
 
 
-Which proteins are the most consistently altered across replicates? Plotting LFC(KO/WT) against nominal p-value.
+Which proteins are the most consistently altered across 
 
 ```{r}
 #Plotting FDR adjusted p value against LFC
@@ -122,7 +125,8 @@ Labeling the genes that Borislav has picked out for further confirmation and has
 
 ```{r}
 borislavLabels <- c("Trio", "Shank3", "Grin1", "Nrcam", "Dlgap1", "Clu", "Prrt1", "Zdhhc5", "Nono", "Cers6", "Uba52", "Rpl29")
-vPlot2 <- makeVolcanoPlot(shank3.xls, borislavLabels)
+previousLab <- c("Homer1", "Kcnj2", "Dock4", "Nckap1", "Cdkl5", "Dlgap3", "Grik5", "Baiap2", "Dlgap2", "Grin2b", "Gnas", "Grin1", "Trio", "Kcnma1", "Cacna1b", "Nlgn2", "Fer", "Aldh5a1")
+vPlot2 <- makeVolcanoPlot(shank3.xls, previousLab)
 vPlot2
 ```
 
@@ -173,8 +177,9 @@ We can conclude that protein length is not associated with alteration in protein
 Carrying out Gene Set Enrichment Analysis now. 
 ```{r}
 shank3.xls <- shank3.xls %>% mutate(t.KO.over.WT = t.WT.over.KO*(-1))
+shank3.xls <- shank3.xls %>% mutate(t.Het.over.WT = t.WT.over.Het*(-1))
 goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.go.v7.2.symbols.gmt"
-shank3.go <- doGoAnalysis(shank3.xls, goPathways)
+shank3.go <- doGoAnalysis(shank3.xls, goPathways, 't.Het.over.WT')
 shank3.go$up
 shank3.go$down
 ```
@@ -194,13 +199,13 @@ shank3.go.tmp$up
 shank3.go.tmp$down
 ```
 
-Gene ontologies associated with glutamatergic function are downregulated even when omitting Shank3. 
+Gene ontologies associated with glutamatergic function are downregulated even when omitting Shank3 from GO analysis. 
 
 
 Plotting genes associated with RNA splicing GO
 
 ```{r}
-subsetGenes <- str_to_title(shank3.go$up$x$data$leadingEdge[[3]]) ### Translation initiaton
+subsetGenes <- str_to_title(shank3.go$up$x$data$leadingEdge[[3]]) 
 subsetGenes.sample <- sample(subsetGenes, min(length(subsetGenes), size = 30))
 vPlot5 <- makeVolcanoPlot(shank3.xls, subsetGenes.sample)
 vPlot5
@@ -209,7 +214,7 @@ vPlot5
 Plotting genes associated with cytosolic ribosome GO
 
 ```{r}
-subsetGenes <- str_to_title(shank3.go$up$x$data$leadingEdge[[13]]) ### Translation initiaton
+subsetGenes <- str_to_title(shank3.go$up$x$data$leadingEdge[[12]]) ### Translation initiaton
 subsetGenes.sample <- sample(subsetGenes, min(length(subsetGenes), size = 30))
 vPlot6 <- makeVolcanoPlot(shank3.xls, subsetGenes.sample)
 vPlot6
@@ -219,7 +224,7 @@ vPlot6
 Plotting genes associated with glutamate receptor signaling GO
 
 ```{r}
-subsetGenes <- str_to_title(shank3.go$down$x$data$leadingEdge[[1]]) ### Translation initiaton
+subsetGenes <- str_to_title(shank3.go$down$x$data$leadingEdge[[1]]) 
 subsetGenes.sample <- sample(subsetGenes, min(length(subsetGenes), size = 30))
 vPlot7 <- makeVolcanoPlot(shank3.xls, subsetGenes.sample)
 vPlot7
@@ -233,6 +238,29 @@ subsetGenes.sample <- sample(subsetGenes, min(length(subsetGenes), size = 30))
 vPlot8 <- makeVolcanoPlot(shank3.xls, subsetGenes.sample)
 vPlot8
 ```
+```{r}
+shank3.g.abundance.m <- getAbundanceOfProtein(shank3.xls, 
+                                             "P10854",
+                                             "Shank3_PSD_TMT11_Proteome..", 
+                                             shank3.sampleSheet)
+shank3.g.abundance.plot <- makeAbundancePlot(shank3.g.abundance.m)
+shank3.g.abundance.plot
+```
+```{r}
+glutSigGenes <- shank3.xls %>% subset(geneSymbol %in% subsetGenes)
+glutSigGenes.ab <- glutSigGenes %>% select(starts_with("Shank3_PSD_TMT11_Proteome.."))
+colnames(glutSigGenes.ab) <- shank3.sampleSheet$cleanId
+Heatmap(glutSigGenes.ab, clustering_distance_rows = "pearson")
+```
+```{r}
+shank3.shank3.iso.abundance.m <- getAbundanceOfProtein(shank3.xls, 
+                                             "Q8R5L1",
+                                             "Shank3_PSD_TMT11_Proteome..", 
+                                             shank3.sampleSheet)
+shank3.shank3.iso.abundance.plot <- makeAbundancePlot(shank3.shank3.iso.abundance.m)
+shank3.shank3.iso.abundance.plot
+```
+
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
 
 When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file).

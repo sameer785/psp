@@ -1,3 +1,0 @@
-"0","borislavLabels <- c(""Trio"", ""Grin1"", ""Nrcam"", ""Dlgap1"", ""Clu"", ""Prrt1"", ""Zdhhc5"", ""Nono"", ""Cers6"", ""Uba52"", ""Rpl29"")"
-"0","vPlot2 <- makeVolcanoPlot(trio.xls, borislavLabels)"
-"0","vPlot2"

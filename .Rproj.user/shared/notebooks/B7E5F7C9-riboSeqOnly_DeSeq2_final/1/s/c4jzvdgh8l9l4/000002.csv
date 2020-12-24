@@ -1,9 +1,0 @@
-"0","```r
-rm(list=ls())
-library(\"DESeq2\")
-require(naturalsort)
-require(RColorBrewer)
-require(pheatmap)
-```"
-"1","Loading required package: pheatmap
-"

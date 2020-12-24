@@ -16,8 +16,7 @@ makeVolcanoPlot <- function(tbl, selLab, cAlph, colCust, legPos){
                            x="logFC.KO.over.WT",
                            y="P.Value.WT.over.KO",
                            lab=tbl$geneSymbol,
-                           ylim=c(0,-log10(10e-5)),
-                           FCcutoff = 2.5, 
+                           FCcutoff = 3, 
                            gridlines.major = FALSE, 
                            gridlines.minor = FALSE,
                            border = 'partial', 
@@ -36,5 +35,8 @@ makeVolcanoPlot <- function(tbl, selLab, cAlph, colCust, legPos){
                            widthConnectors=0.3,
                            typeConnectors = "open"
   )
+  vPlot <- vPlot + scale_x_continuous(breaks = scales::pretty_breaks(n=10))
+  vPlot <- vPlot + scale_y_continuous(breaks = scales::pretty_breaks(n=10))
+  
   return(vPlot)
 }

@@ -1,0 +1,195 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r, message=FALSE}
+rm(list=ls())
+require(readxl)
+require(tidyverse)
+require(tm)
+require(ggfortify)
+require(reshape2)
+require(ggbeeswarm)
+require(EnhancedVolcano)
+require(RColorBrewer)
+require(fgsea)
+require(ComplexHeatmap)
+```
+
+```{r}
+files.sources = list.files("../functions" , full.names = TRUE)
+invisible(lapply(files.sources, source))
+tau <- read_xlsx("../data/tauTgPsdProteomics.xlsx")
+tau <- tau %>% drop_na('Fold-change')
+tau <- tau %>% mutate(lfc = log2(`Fold-change`))
+tau <- tau %>% mutate(padj = -log10(`Adjusted p-value`))
+```
+
+
+```{r}
+hist(tau$`Adjusted p-value`, breaks = 100)
+```
+```{r}
+sum(tau$`Adjusted p-value` < 0.1)
+```
+
+```{r}
+tau <- tau %>% dplyr::mutate(logFC.KO.over.WT = lfc)
+tau <- tau %>% dplyr::mutate(geneSymbol = Symbol)
+tau <- tau %>% dplyr::mutate(P.Value.WT.over.KO = `Adjusted p-value`)
+
+tb <- tau %>% select(geneSymbol, logFC.KO.over.WT, P.Value.WT.over.KO)
+vPlot <- makeVolcanoPlot(tb)
+vPlot <- vPlot + scale_y_continuous(trans='log10')
+vPlot
+```
+
+```{r}
+geneLengths <- read.csv("~/Google Drive/geneSets/geneLengths/S3.genes.results", sep="\t", header=T)
+geneLengths <- geneLengths[,c(1:3)]
+resLen <- inner_join(tau, geneLengths, by=c("geneSymbol"="gene_id"))
+resLen$aaSize <- resLen$length/3
+resLen$logAAsize <- log2(resLen$aaSize)
+##### CDS length distribution is shifted left in the PSD compared to tissue RF. Why??
+resLen <- setupBins(resLen, "logAAsize", c(0,6.5,7.5,9,10.5,12,16))
+keyvals <- colorizeBins(resLen)
+vPlot4 <- makeVolcanoPlot(resLen, NULL, 0.8, keyvals, c(0.1,0.9))
+vPlot4 <- vPlot4 +  scale_y_continuous(trans='log10')
+vPlot4
+```
+```{r}
+# Lfcbins has changed now. Stratifying LFC cum freq w/ CDS length bins. 
+lfcCumFreqPlot <- makeStratifiedCumLfcPlot(resLen)
+lfcCumFreqPlot
+```
+```{r}
+# Gene ontology analysis
+tau <- tau %>% mutate(t.KO.over.WT = lfc)
+tbl <- tau %>% select(geneSymbol, t.KO.over.WT)
+#tau <- tau %>% filter(geneSymbol!='Plec')
+goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/curated/c2.cp.reactome.v7.2.symbols.gmt"
+tau.go <- doGoAnalysis(tbl, goPathways)
+tau.go$up
+tau.go$down
+```
+```{r}
+pVal <- 0.1
+trio.xls <- read_xlsx("../data/results_PSD-Trio-proteome_Two-sample_mod_T_2020-07-24.xlsx")
+trio.xls <- trio.xls %>% drop_na(logFC.WT.over.KO)
+shank3.xls <- read_xlsx("../data/results_PSD-Shank3-proteome_Two-sample_mod_T_2020-07-22.xlsx")
+shank3.xls <- shank3.xls %>% drop_na(logFC.WT.over.KO)
+
+sharedIds <- intersect(trio.xls$id, intersect(shank3.xls$id, tau$`Accession Number`))
+length(sharedIds)
+
+sharedIds.shank3 <- intersect(shank3.xls$id, tau$`Accession Number`)
+length(sharedIds.shank3)
+
+length(setdiff(tau$`Accession Number`, trio.xls$id))
+length(setdiff(tau$`Accession Number`, shank3.xls$id))
+
+goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
+pathways.go <- gmtPathways(goPathways)
+rnaSplicing <- str_to_title(pathways.go$GO_RNA_SPLICING)
+cytosolicRibosome <- str_to_title(pathways.go$GO_CYTOSOLIC_RIBOSOME)
+oxPhos <- str_to_title(pathways.go$GO_OXIDATIVE_PHOSPHORYLATION)
+cplmnt <- str_to_title(pathways.go$GO_COMPLEMENT_ACTIVATION)
+
+
+
+
+trio.xls <- trio.xls %>% dplyr::mutate(logFC.KO.over.WT = logFC.WT.over.KO*(-1))
+shank3.xls <- shank3.xls %>% dplyr::mutate(logFC.KO.over.WT = logFC.WT.over.KO*(-1))
+joint <- inner_join(trio.xls, shank3.xls, by='id')
+joint <- joint %>% mutate(trio.sig = ifelse(P.Value.WT.over.KO.x < pVal, 1, 0))
+joint <- joint %>% mutate(shank3.sig = ifelse(P.Value.WT.over.KO.y < pVal, 2, 0))
+tau <- tau %>% mutate(id=`Accession Number`)
+joint.tau <- inner_join(joint, tau, by='id')
+joint.tau <- joint.tau %>% mutate(tau.sig = ifelse(`Adjusted p-value`<pVal, 4, 0))
+joint.tau <- joint.tau %>% mutate(all.sig = as.factor(trio.sig + tau.sig))
+joint.tau <- joint.tau %>% mutate(shank3.tau.sig = as.factor(shank3.sig + tau.sig))
+joint.tau <- joint.tau %>% mutate(splicing = ifelse(geneSymbol.x %in% rnaSplicing, 1, 0))
+cytosolicRibosome.curr <- intersect(cytosolicRibosome, joint$geneSymbol.x)
+joint.tau <- joint.tau %>% mutate(cytosolicRibosome = ifelse(geneSymbol.x %in% cytosolicRibosome.curr, 2, 0))
+joint.tau <- joint.tau %>% mutate(spl.ribo = splicing + cytosolicRibosome)
+joint.tau <- joint.tau %>% mutate(mito = ifelse(geneSymbol.x %in% oxPhos, 1, 0))
+joint.tau <- joint.tau %>% mutate(complement = ifelse(geneSymbol.x %in% cplmnt, 1, 0))
+
+
+curDat <- joint.tau %>% 
+  select(id, geneSymbol.x, geneSymbol.y, geneSymbol, logFC.KO.over.WT.x, logFC.KO.over.WT.y, lfc, trio.sig, shank3.sig, tau.sig, all.sig, splicing, cytosolicRibosome, mito, spl.ribo, complement, shank3.tau.sig) %>% 
+  rename(x=logFC.KO.over.WT.x, z=logFC.KO.over.WT.y, y=lfc, color=all.sig)
+
+cor(curDat$x, curDat$y)
+
+head(curDat)
+
+
+plotWidth <- 12
+plotHeight <- 8
+lab  <- c("NS", "Sig. Trio", "Sig. Tau-tg", "Sig. Both")
+scPlot <- makeScatterPlot(curDat, lab)
+scPlot <- scPlot + xlab("Log2-fold change (Trio KO/WT)") + ylab("Log2-fold change (Tau-tg/WT)")
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==5), as.character(geneSymbol), '')), show.legend = FALSE)
+scPlot
+ggsave("~/Google Drive/psp/analysis/plots/trioVtauTg/lfcScatterP1.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+lab <- c("","RNA splicing", "Cytosolic ribosome","Both")
+curDat <- curDat %>% mutate(color=spl.ribo)
+scPlot <- makeScatterPlot(curDat, lab)
+scPlot <- scPlot + xlab("Log2-fold change (Trio KO/WT)") + ylab("Log2-fold change (Tau-tg/WT)")
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==2 & x> 2) | (color==2 & y > 2) |  (color==1 & x > 2) |  (color==1 & y > 2)), as.character(geneSymbol.x), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25)
+scPlot
+ggsave("~/Google Drive/psp/analysis/plots/trioVtautg/lfcScatter_splicing_ribosome.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+lab <- c("", "Oxidative phosphorylation")
+curDat <- curDat %>% mutate(color=mito)
+scPlot <- makeScatterPlot(curDat, lab)
+scPlot <- scPlot + xlab("Log2-fold change (Trio KO/WT)") + ylab("Log2-fold change (Tau-tg/WT)")
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 & x> 2) | (color==1 & y > 2) | (color==1 & y < -2) | (color==1 & x < -2)), as.character(geneSymbol.x), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25)
+scPlot
+ggsave("~/Google Drive/psp/analysis/plots/trioVtautg/lfcScatter_oxidative_phosphorylation.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+
+lab <- c("", "Complement activation")
+curDat <- curDat %>% mutate(color=complement)
+scPlot <- makeScatterPlot(curDat, lab)
+scPlot <- scPlot + xlab("Log2-fold change (Trio KO/WT)") + ylab("Log2-fold change (Tau-tg/WT)")
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 & x> 2) | (color==1 & y > 2) | (color==1 & y < -2) | (color==1 & x < -2)), as.character(geneSymbol.x), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25)
+scPlot
+ggsave("~/Google Drive/psp/analysis/plots/trioVtautg/lfcScatter_complement_activation.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+curDat <- curDat %>% mutate(x=z)
+curDat <- curDat %>% mutate(color=shank3.tau.sig)
+lab  <- c("NS", "Sig. Shank3 KO", "Sig. Tau-tg", "Sig. Both")
+scPlot <- makeScatterPlot(curDat, lab)
+scPlot <- scPlot + xlab("Log2-fold change (Shank3 KO/WT)") + ylab("Log2-fold change (Tau-tg/WT)")
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==6), as.character(geneSymbol), '')), show.legend = FALSE)
+scPlot <- scPlot + theme(legend.position = c(0.2,.25))
+scPlot
+ggsave("~/Google Drive/psp/analysis/plots/shank3VtauTg/lfcScatterP1.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+
+lim=NULL
+scPlot <- makeScatterPlot(curDat, lab)
+scPlot <- scPlot + xlab("Log2-fold change (Trio KO/WT)") + ylab("Log2-fold change (Tau-Tg/WT)")
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==5 & x< (-1)), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25)
+scPlot
+
+scPlot <- makeScatterPlot(curDat, lab)
+scPlot <- scPlot + xlab("Log2-fold change (Trio KO/WT)") + ylab("Log2-fold change (Tau-Tg/WT)")
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse((trio.sig==1 & x > 1), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25)
+#scPlot <- scPlot + coord_cartesian(xlim=c(-3,3))
+scPlot
+
+
+scPlot <- makeScatterPlot(curDat, lab)
+scPlot <- scPlot + xlab("Log2-fold change (Trio KO/WT)") + ylab("Log2-fold change (Tau-Tg/WT)")
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse((trio.sig==1 & x < -1), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25)
+#scPlot <- scPlot + coord_cartesian(xlim=c(-3,3))
+scPlot
+
+```
+
+

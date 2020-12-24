@@ -1,9 +1,0 @@
-"0","```r
-source(\"~/Documents/R/modMakeVolcanoPlot.R\")
-require(svglite)
-res_fxs_sig_cut <- res_fxs_sig[!(row.names(res_fxs_sig) %in% c(\"Fmr1\", \"Rps6kb1\")), ]
-cutLab <- rownames(res_fxs_sig_cut)[1:20]
-vPlot_wt_fxs <- makeVolcanoPlot(res_fxs_shrunk, cutLab)
-vPlot_wt_fxs
-ggsave(filename=\"~/Google Drive/fromDropbox/plotsForPublication/fig1_wtVfxs_ribo/volcano_wt_fxs.pdf\", width=8, height=6, units=\"in\")
-```"

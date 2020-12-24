@@ -1,5 +1,0 @@
-"0","```r
-geneName <- \"Gusb\"
-res_total_fxs[geneName,]
-plotCounts(ddsTotal_cut, gene = geneName, intgroup = \"genotypeTotal\")
-```"

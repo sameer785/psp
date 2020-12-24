@@ -1,5 +1,0 @@
-"0","###"
-"0","trio.abundances.clean.log <- log(trio.abundances.clean+abs(min(trio.abundances.clean))+1)"
-"0","trio.abundances.clean.log.pca.plot <- makePcaPlot(trio.abundances.clean.log, trio.sampleSheet$color)"
-"2","the condition has length > 1 and only the first element will be used"
-"0","trio.abundances.clean.log.pca.plot"

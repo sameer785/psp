@@ -1,0 +1,365 @@
+---
+title: "Grin2a PSD proteome analysis"
+output:
+html_document: default
+html_notebook: default
+pdf_document: default
+---
+  
+Sameer Aryal 
+
+Postdoctoral Associate
+
+Sheng Laboratory
+
+Broad Institute of MIT and Harvard
+
+Dec. 4, 2020
+
+How does genetically removing grin2a alter the postsynaptic density (PSD) proteome?
+Examining TMT labeled PSD proteome from WT, Grin2a/+, and Grin2a/Grin2a mice. 
+Experiment carried out by Borislav Dejanovic. 
+
+```{r, message=FALSE}
+rm(list=ls())
+require(readxl)
+require(tidyverse)
+require(tm)
+require(ggfortify)
+require(reshape2)
+require(ggbeeswarm)
+require(EnhancedVolcano)
+require(RColorBrewer)
+require(fgsea)
+require(ComplexHeatmap)
+```
+Loading data and helper functions. 
+
+```{r}
+files.sources = list.files("../functions" , full.names = TRUE)
+invisible(lapply(files.sources, source))
+grin2a.xls <- read_xlsx("../data/results_Glun2a-TMT16-Proteome_Two-sample_mod_T_2020-11-30.xlsx")
+grin2a.xls <- grin2a.xls %>% drop_na(logFC.WT.over.KO)
+#grin2a.xls <- grin2a.xls %>% filter(TMT16_PSD_Glun2A_Proteome.numSpectra > 5)
+#dim(grin2a.xls)
+```
+Does the data have any underlying structure?
+  
+```{r}
+grin2a.abundances <- grin2a.xls %>% dplyr::select(starts_with("Glun2A_PSD_TMT16_Proteome.."))
+
+#Renaming columns for clarity
+grin2a.sampleSheet <- makeSampleSheet(grin2a.abundances)
+colnames(grin2a.abundances) <- grin2a.sampleSheet$cleanId
+
+
+# Remove any rows with NA
+grin2a.abundances.clean <- na.omit(grin2a.abundances)
+grin2a.abundances.pca.plot <- makePcaPlot(grin2a.abundances.clean, grin2a.sampleSheet$color)
+grin2a.abundances.pca.plot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/grin2a/pca.pdf", width = 12, height = 8, units = "in")
+```
+
+
+
+Does log transformation reveal any underlying structure?
+  
+```{r}
+###
+grin2a.abundances.clean.log <- log(grin2a.abundances.clean+abs(min(grin2a.abundances.clean))+1)
+grin2a.abundances.clean.log.pca.plot <- makePcaPlot(grin2a.abundances.clean.log, grin2a.sampleSheet$color)
+grin2a.abundances.clean.log.pca.plot
+
+# No inherent structure in the data
+# Samples do not vary primarily by genotype
+```
+
+
+
+How does expresssion of grin2a vary with genotype?
+```{r}
+# Check abundance of Grin2a protein
+grin2a.grin2a.abundance.m <- getAbundanceOfProtein(grin2a.xls, 
+                                               'P35436',
+                                               "Glun2A_PSD_TMT16_Proteome..", 
+                                               grin2a.sampleSheet)
+grin2a.grin2a.abundance.plot <- makeAbundancePlot(grin2a.grin2a.abundance.m)
+grin2a.grin2a.abundance.plot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/grin2a/proteinExpression_Glun2a.pdf", width = 8, height = 6, units = "in")
+
+```
+
+The Broad modeling (moderated t-test followed by FDR adjustment) finds that no genes, including grin2a, are significantly altered after FDR adjustment of p-values. The following plot shows the distribution of FDR adjusted p-values. 
+
+```{r}
+plot(density(grin2a.xls$adj.P.Val.WT.over.KO), xlim=c(0,1))
+```
+I am therefore using nominal p-values for further analysis of the data. Here is how the nominal p-value distribution looks like.
+
+```{r}
+plot(density(grin2a.xls$P.Value.WT.over.KO), xlim=c(0,1))
+```
+
+Since we are using nominal p-values, the chances of getting false positive hits is quite high. The number of proteins with p-values below 0.05 is:
+```{r}
+sum(grin2a.xls$P.Value.WT.over.KO < 0.1)
+```
+
+
+
+Which proteins are the most consistently altered across replicates? Plotting LFC(KO/WT) against nominal p-value.
+
+```{r}
+#Plotting FDR adjusted p value against LFC
+grin2a.xls <- grin2a.xls %>% dplyr::mutate(logFC.KO.over.WT = logFC.WT.over.KO*(-1))
+vPlot <- makeVolcanoPlot(grin2a.xls)
+#vPlot <- vPlot + coord_cartesian(xlim = c(-5,5), )
+ggsave(filename = "~/Google Drive/psp/analysis/plots/grin2a/volcano_3fc_3p.pdf", width = 12, height = 8, units = "in")
+
+grin2a.xls <- grin2a.xls %>% dplyr::mutate(logFC.KO.over.WT = logFC.WT.over.KO*(-1))
+vPlot <- makeVolcanoPlot(grin2a.xls)
+vPlot <- vPlot + coord_cartesian(xlim = c(-5,5), ylim=c(0,-log10(10e-5)))
+vPlot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/grin2a/volcano_3fc_3p_AXES_CONSTRAINED.pdf", width = 12, height = 8, units = "in")
+```
+
+
+Does the MW of the protein dictate its LFC? To examine this, I divided all proteins into 6 color coded bins. The bins are unequal in size, so that I can see any representative effects at extremes. Bin 1 harbors the proteins with the smallest MW, bin 6 the largest MWs. 
+```{r}
+grin2a.xls <- grin2a.xls %>% dplyr::mutate(log_protein_mw = log(protein_mw))
+grin2a.xls <- setupBins(grin2a.xls, "log_protein_mw", c(0,10,10.5,11.25,11.75,12.5,16))
+keyvals <- colorizeBins(grin2a.xls)
+vPlot3 <- makeVolcanoPlot(grin2a.xls, NULL, 0.8, keyvals, c(0.5,0.9))
+vPlot3 <- vPlot3 + coord_cartesian(xlim = c(-5,5), ylim=c(0,-log10(10e-5)))
+vPlot3
+ggsave(filename = "~/Google Drive/psp/analysis/plots/grin2a/volcano_3fc_3p_log_molecular_weight.pdf", width = 12, height = 8, units = "in")
+```
+
+
+It does not look like the MW is associated with LFC. To examine this more systematically, I am using the same bins and plotting the cumulative frequency vs. LFC in each bin. 
+```{r}
+#Stratify cumulative frequency by protein MW
+lfcCumFreqPlot <- makeStratifiedCumLfcPlot(grin2a.xls)
+lfcCumFreqPlot <- lfcCumFreqPlot + coord_cartesian(xlim = c(-2,2))
+lfcCumFreqPlot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/grin2a/lfcCumFreq_log_molecular_weight.pdf", width = 12, height = 8, units = "in")
+
+```
+
+
+In each bin, proteins are as likely to upregulated as they are to be downregulated. Therefore, the MW of a protein does not dictate its LFC. Neither large nor small proteins aren't especially overabundant in grin2a KO mice. 
+
+
+MW is related but not wholly representative of the number of amino acids in a protein. Are the alterations in protein expression at the PSD with deletion of grin2a associated with the number of amino acids in the protein (the protein length)?
+```{r}
+#Stratify by CDS length
+geneLengths <- read.csv("~/Google Drive/geneSets/geneLengths/S3.genes.results", sep="\t", header=T)
+geneLengths <- geneLengths[,c(1:3)]
+resLen <- inner_join(grin2a.xls, geneLengths, by=c("geneSymbol"="gene_id"))
+resLen$aaSize <- resLen$length/3
+resLen$logAAsize <- log2(resLen$aaSize)
+##### CDS length distribution is shifted left in the PSD compared to tissue RF. Why??
+resLen <- setupBins(resLen, "logAAsize", c(0,6.5,7.5,9,10.5,12,16))
+keyvals <- colorizeBins(resLen)
+vPlot4 <- makeVolcanoPlot(resLen, NULL, 0.8, keyvals, c(0.5,0.9))
+vPlot4 <- vPlot4 + coord_cartesian(xlim = c(-5,5), ylim=c(0,-log10(10e-5)))
+vPlot4
+ggsave(filename = "~/Google Drive/psp/analysis/plots/grin2a/volcano_3fc_3p_log_CDS_length.pdf", width = 12, height = 8, units = "in")
+
+```
+
+
+It does not look like LFC is dependent on protein length either. Analysing this more systematically now. 
+```{r}
+# Lfcbins has changed now. Stratifying LFC cum freq w/ CDS length bins. 
+lfcCumFreqPlot <- makeStratifiedCumLfcPlot(resLen)
+lfcCumFreqPlot <- lfcCumFreqPlot + coord_cartesian(xlim = c(-2,2))
+lfcCumFreqPlot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/grin2a/lfcCumFreq_log_CDS_len.pdf", width = 12, height = 8, units = "in")
+
+```
+We can conclude that protein length is not associated with alteration in protein expression. 
+
+Carrying out Gene Set Enrichment Analysis now. 
+```{r}
+# Gene ontology analysis
+grin2a.xls <- grin2a.xls %>% mutate(t.KO.over.WT = t.WT.over.KO*(-1))
+goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
+grin2a.go <- doGoAnalysis(grin2a.xls, goPathways)
+grin2a.go$up
+grin2a.go$down
+```
+```{r}
+goPathways2 <- "~/Google Drive/geneSets/mSigDb/v7_2/curated/c2.cp.kegg.v7.2.symbols.gmt"
+grin2a.go.kegg <- doGoAnalysis(grin2a.xls, goPathways2)
+grin2a.go.kegg$up
+grin2a.go.kegg$down
+```
+
+Plotting genes associated with RNA splicing GO
+```{r}
+rnaProcessing <- read.csv("~/Google Drive/psp/analysis/goLists/grin2a/rnaSplicing.csv", header=1, row.names = 1)
+rnaProcessing <- rnaProcessing$x
+rnaProcessing.sample <- sample(rnaProcessing, size = min(length(rnaProcessing), 30))
+vPlot5 <- makeVolcanoPlot(grin2a.xls, rnaProcessing.sample)
+vPlot5
+```
+
+
+Plotting genes associated with mitochondrial inner membrane GO
+
+```{r}
+mito <- str_to_title(grin2a.go$down$x$data$leadingEdge[[6]])
+mito.sample <- sample(mito, size = min(length(mito), 30))
+vPlot6 <- makeVolcanoPlot(grin2a.xls, mito.sample)
+vPlot6
+```
+
+
+Plotting genes associated with synapse assembly GO
+```{r}
+syn <- read.csv("~/Google Drive/psp/analysis/goLists/grin2a/synapseAssembly.csv", header = 1, row.names = 1)
+syn <- syn$x
+syn.sample <- sample(syn, size =  min(length(syn), 30))
+vPlot7 <- makeVolcanoPlot(grin2a.xls, syn.sample)
+vPlot7
+```
+
+Plotting genes associated with chromatin binding GO
+```{r}
+chromProcessing <- read.csv("~/Google Drive/psp/analysis/goLists/grin2a/chromatinBinding.csv", header=1, row.names = 1)
+chromProcessing <- chromProcessing$x
+chromProcessing.sample <- sample(chromProcessing, size =  min(length(chromProcessing), 30))
+vPlot8 <- makeVolcanoPlot(grin2a.xls, chromProcessing.sample)
+vPlot8
+```
+How do the alterations in grin2a/+ PSDs compare with the grin2a/grin2a mice? Looking first at alterations in Het PSD. 
+```{r}
+plot(density(grin2a.xls$adj.P.Val.WT.over.Het), xlim=c(0,1.2))
+plot(density(grin2a.xls$P.Value.WT.over.Het), xlim=c(0,1.2))
+dim(grin2a.xls %>% filter(P.Value.WT.over.Het < 0.05))[1]
+```
+
+Like with KO grin2a/grin2a PSD, no proteins have FDR adjusted p-value of 0.99.Proceeding with nominal p-values, which look similarly distributed to those in KO. 109 proteins less than 0.05. 
+
+Now looking at LFC against nominal p-value. 
+
+```{r}
+grin2a.xls <- grin2a.xls %>% mutate(logFC.Het.over.WT=logFC.WT.over.Het*(-1))
+makeVolcanoHet(grin2a.xls, , , , , 2)
+```
+
+Labeling proteins that Borislav has antibodies for. 
+
+```{r}
+makeVolcanoHet(grin2a.xls, borislavLabels, , , ,2)
+```
+While the changes mostly appear to be in the same directions as those in the KO, they are not always as robust (as indicated by LFC and p-value pairing).  
+
+Carrying out GO analysis now on genes ranked by t statistic of (Het/WT). 
+
+```{r}
+# Gene ontology analysis
+grin2a.xls <- grin2a.xls %>% mutate(t.Het.over.WT = t.WT.over.het*(-1))
+grin2a.het2.go <- doGoAnalysisHet(grin2a.xls, goPathways)
+grin2a.het2.go$up
+grin2a.het2.go$down
+```
+There is Keratin contamination in the Het samples. 
+
+GOs associated with splicing, rna processing, and ribosome are elevated in the Het as well, compared to the WT (same as with the KO).
+
+Respirasome is elevated in the Het compared to the WT. This is in opposition to what is observed in the KO, where the abundance of mitochondrial and electron transport chain proteins are reduced. 
+
+
+```{r}
+grin2a.xls %>% filter(logFC.Het.over.WT > 5) %>% select(geneSymbol, logFC.Het.over.WT, P.Value.WT.over.Het)
+```
+Pretty much all the extremely large effect size, but low nominal p-value proteins are Keratin proteins. Suggests one of the samples is hairy. 
+
+```{r}
+kerPlot <- makeAbundancePlot(getAbundanceOfProtein(grin2a.xls,'Q6NXH9',"grin2a_PSD_TMT11_Proteome..", grin2a.sampleSheet))
+kerPlot
+```
+
+Abundnace of Krt8. Looks like two of the Hets and one of the KO samples is contaminated with Keratin. Possibly one of the WTs. Ignoring GOs related to Keratin now. Have to figure out how to remove Keratin from datasets without compromising it. 
+
+Now looking at correlation between LFCs of Het/WT and KO/WT.
+
+```{r}
+cor(grin2a.xls$logFC.Het.over.WT , grin2a.xls$logFC.KO.over.WT)
+makeCorrPlot(grin2a.xls, "logFC.Het.over.WT", "logFC.KO.over.WT")
+```
+
+Correlation of 0.3840326; excluding the Keratins, the correlation looks quite good. Alterations appear to be related to gene dosage. 
+
+Now looking at KO/Het
+
+```{r}
+cor(grin2a.xls$logFC.KO.over.Het , grin2a.xls$logFC.KO.over.WT)
+makeCorrPlot(grin2a.xls, "logFC.KO.over.Het", "logFC.KO.over.WT")
+```
+
+```{r}
+# Gene ontology analysis
+grin2a.het3.go <- doGoAnalysisHet3(grin2a.xls, goPathways)
+grin2a.het3.go$up
+grin2a.het3.go$down
+```
+
+GOs associated with RNA processing and splicing are further elevated in the KO compaored to the Het. In contrast,  mitochondrial proteins are reduced in the KO compared to the Het (Therefore, expected abundances for mito proteins, if Wt=0 -> Het =2, KO=-2)
+
+Now, looking at raw abundances of genes associated with specific GOs to get an intuitive understanding of the changes. 
+
+Looking first at 'RNA processsing,' the GO term most upregulated in KO/WT. Taking genes from that set, and looking at normalized abundances. 
+
+```{r}
+rnaProcessing <- str_to_title(grin2a.go$up$x$data$leadingEdge[[1]]) 
+rp.ab <- grin2a.xls %>%
+  filter(geneSymbol %in% rnaProcessing) %>%
+  select(starts_with("grin2a_PSD_TMT11_Proteome.."))
+colnames(rp.ab) <- grin2a.sampleSheet$cleanId
+Heatmap(as.matrix(rp.ab))
+
+rp.ab <- rp.ab %>% mutate(WT=rowMeans(select(rp.ab, starts_with("WT"))))
+rp.ab <- rp.ab %>% mutate(KO=rowMeans(select(rp.ab, starts_with("KO"))))
+rp.ab <- rp.ab %>% mutate(Het=rowMeans(select(rp.ab, starts_with("Het"))))
+Heatmap(as.matrix(rp.ab%>% select(WT, Het, KO)))
+
+
+
+```
+
+Arguably there is a gene dosage dependent alteration in RNA processing proteins. Data is very noisy though.
+
+Now looking at the genes associated with the top GO term that's downregulated in KO/WT, which is Oxidoreductase complex. 
+
+```{r}
+rnaProcessing <- str_to_title(grin2a.go$down$x$data$leadingEdge[[1]]) 
+rp.ab <- grin2a.xls %>%
+  filter(geneSymbol %in% rnaProcessing) %>%
+  select(starts_with("grin2a_PSD_TMT11_Proteome.."))
+colnames(rp.ab) <- grin2a.sampleSheet$cleanId
+Heatmap(as.matrix(rp.ab))
+
+rp.ab <- rp.ab %>% mutate(WT=rowMeans(select(rp.ab, starts_with("WT"))))
+rp.ab <- rp.ab %>% mutate(KO=rowMeans(select(rp.ab, starts_with("KO"))))
+rp.ab <- rp.ab %>% mutate(Het=rowMeans(select(rp.ab, starts_with("Het"))))
+Heatmap(as.matrix(rp.ab%>% select(WT, Het, KO)))
+
+```
+
+As hinted earlier, halving the dosage of grin2a elevates mitochondrial proteins, while knocking out grin2a reduces mitochondrial proteins. Again, data is noisy.  
+
+```{r}
+# Check abundance of grin2a protein
+grin2a.grin2a.abundance.m <- getAbundanceOfProtein(grin2a.xls, 
+                                               'Q9Z1F9',
+                                               "Glun2A_PSD_TMT16_Proteome..", 
+                                               grin2a.sampleSheet)
+grin2a.grin2a.abundance.plot <- makeAbundancePlot(grin2a.grin2a.abundance.m)
+grin2a.grin2a.abundance.plot
+```
+
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file).

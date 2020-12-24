@@ -1,7 +1,0 @@
-"0","bm<-read_csv(""~/bioChem/ensemblId_mouseGeneName_humanGeneName.csv"")
-"
-"2","restarting interrupted promise evaluation"
-"2","internal error -5 in R_decompress1"
-"2","Error in date_names_lang(date_names) : 
-  lazy-load database '/Library/Frameworks/R.framework/Versions/3.6/Resources/library/readr/R/sysdata.rdb' is corrupt
-"

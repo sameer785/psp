@@ -1,8 +1,0 @@
-"0","```r
-res_total_dko<- results(ddsTotal_cut, contrast=c(\"genotypeTotal\",\"DKO\",\"WT\"), cooksCutoff = 0.5)
-res_total_dko_shrunk <- lfcShrink(ddsTotal_cut, contrast=c(\"genotypeTotal\",\"DKO\",\"WT\"), res = res_total_dko)
-summary(res_total_dko)
-res_total_dko_sig <- processDeSeq2results(res_total_dko)
-summary(res_total_dko_sig)
-write.csv(res_total_dko_sig, \"~/aniso/results/total/aniso_total_wtVdko.csv\", quote = FALSE)
-```"

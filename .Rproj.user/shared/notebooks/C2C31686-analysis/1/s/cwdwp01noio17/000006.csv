@@ -1,5 +1,0 @@
-"0","trio.xls <- trio.xls %>% dplyr::mutate(log_protein_mw = log(protein_mw))"
-"0","trio.xls <- setupBins(trio.xls, ""log_protein_mw"", c(0,9.5,10.25,11.25,12,12.5,16))"
-"0","keyvals <- colorizeBins(trio.xls)"
-"0","vPlot3 <- makeVolcanoPlot(trio.xls, NULL, 0.8, keyvals, c(0.1,0.9))"
-"0","vPlot3"

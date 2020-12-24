@@ -1,8 +1,0 @@
-"0","```r
-processDeSeq2results <- function(res){
-  res_tmp <- res[!is.na(res$padj) & !is.na(res$log2FoldChange),]
-  res_sig <- res_tmp[(res_tmp$padj<pVal),]
-  res_sig <- res_sig[order(res_sig$padj),]
-  return (res_sig)
-}
-```"

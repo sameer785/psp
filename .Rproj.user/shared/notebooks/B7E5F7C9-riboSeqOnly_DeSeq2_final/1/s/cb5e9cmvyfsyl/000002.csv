@@ -1,8 +1,0 @@
-"0","```r
-source(\"~/Documents/R/modMakeVolcanoPlot.R\")
-res_dko_sig_cut <- res_dko_sig[!(row.names(res_dko_sig) %in% c(\"Fmr1\", \"Rps6kb1\")), ]
-cutLab <- rownames(res_dko_sig_cut)[1:20]
-vPlot_wt_dko <- makeVolcanoPlot(res_dko_shrunk, cutLab)
-vPlot_wt_dko
-ggsave(filename=\"~/Google Drive/fromDropbox/plotsForPublication/fig4_wtVdko_ribo/volcano_wt_dko.pdf\", width=8, height=6, units=\"in\")
-```"
