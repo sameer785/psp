@@ -79,6 +79,8 @@ trio.xls <- read_xlsx("../data/results_PSD-Trio-proteome_Two-sample_mod_T_2020-0
 trio.xls <- trio.xls %>% drop_na(logFC.WT.over.KO)
 shank3.xls <- read_xlsx("../data/results_PSD-Shank3-proteome_Two-sample_mod_T_2020-07-22.xlsx")
 shank3.xls <- shank3.xls %>% drop_na(logFC.WT.over.KO)
+grin2a.xls <- read_xlsx("../data/results_Glun2a-TMT16-Proteome_Two-sample_mod_T_2020-11-30.xlsx")
+grin2a.xls <- grin2a.xls %>% drop_na(logFC.WT.over.KO)
 
 sharedIds <- intersect(trio.xls$id, intersect(shank3.xls$id, tau$`Accession Number`))
 length(sharedIds)
@@ -190,6 +192,150 @@ scPlot <- scPlot + geom_text_repel(aes(label=ifelse((trio.sig==1 & x < -1), as.c
 #scPlot <- scPlot + coord_cartesian(xlim=c(-3,3))
 scPlot
 
+```
+
+
+```{r}
+pVal <- 0.1
+plotWidth <- 12
+plotHeight <- 9
+
+goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
+pathways.go <- gmtPathways(goPathways)
+rnaSplicing <- str_to_title(pathways.go$GO_RNA_SPLICING)
+cytosolicRibosome <- str_to_title(pathways.go$GO_CYTOSOLIC_RIBOSOME)
+oxPhos <- str_to_title(pathways.go$GO_OXIDATIVE_PHOSPHORYLATION)
+cplmnt <- str_to_title(pathways.go$GO_COMPLEMENT_ACTIVATION)
+glutSyn <- str_to_title(pathways.go$GO_GLUTAMATERGIC_SYNAPSE)
+vgc <- str_to_title(pathways.go$GO_VOLTAGE_GATED_ION_CHANNEL_ACTIVITY)
+
+
+setTauVars <- function(dat.xls){
+  dat.xls <- dat.xls %>% dplyr::mutate(logFC.KO.over.WT = logFC.WT.over.KO*(-1))
+  tau <- tau %>% mutate(id=`Accession Number`)
+  joint.tau <- inner_join(dat.xls, tau, by='id')
+  joint.tau <- joint.tau %>% mutate(dat.sig = ifelse(P.Value.WT.over.KO < pVal, 1, 0))
+  joint.tau <- joint.tau %>% mutate(tau.sig = ifelse(`Adjusted p-value`<pVal, 4, 0))
+  joint.tau <- joint.tau %>% mutate(all.sig = as.factor(dat.sig + tau.sig))
+  joint.tau <- joint.tau %>% mutate(splicing = ifelse(geneSymbol %in% rnaSplicing, 1, 0))
+  joint.tau <- joint.tau %>% mutate(cytosolicRibosome = ifelse(geneSymbol %in% cytosolicRibosome, 2, 0))
+  joint.tau <- joint.tau %>% mutate(spl.ribo = splicing + cytosolicRibosome)
+  joint.tau <- joint.tau %>% mutate(mito = ifelse(geneSymbol %in% oxPhos, 1, 0))
+  joint.tau <- joint.tau %>% mutate(complement = ifelse(geneSymbol %in% cplmnt, 1, 0))
+  joint.tau <- joint.tau %>% mutate(glutamatergicSynapse = ifelse(geneSymbol %in% glutSyn, 1, 0))
+  joint.tau <- joint.tau %>% mutate(vgc = ifelse(geneSymbol %in% vgc, 1, 0))
+
+  return (joint.tau)
+}
+
+makePlot <- function(dat, gen){
+  curDat <- setTauVars(dat)
+  curDat <- curDat %>% mutate(x=logFC.KO.over.WT, y=lfc)
+  curDat <- curDat %>% mutate(color=all.sig)
+  currGen <- paste("Sig", gen, "KO")
+  lab  <- c("NS", currGen, "Sig. Tau-tg", "Sig. Both")
+  scPlot <- makeScatterPlot(curDat, lab)
+  currLab <- paste("Log2-fold change (", gen, " KO/WT)", sep="")
+  scPlot <- scPlot + xlab(currLab) + ylab("Log2-fold change (Tau-tg/WT)")
+  scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==5), as.character(geneSymbol), '')), show.legend = FALSE)
+  scPlot <- scPlot + coord_cartesian(xlim = c(-5,5))
+  return(scPlot)
+}
+
+
+
+
+p <- makePlot(trio.xls, "Trio")
+ggsave("~/Google Drive/psp/analysis/plots/trio/trio_ko_vs_tauTg_lfcScatterP1.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+p <- makePlot(shank3.xls, "Shank3")
+ggsave("~/Google Drive/psp/analysis/plots/shank3/shank3_ko_vs_tauTg_lfcScatterP1.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+p <- makePlot(grin2a.xls, "Grin2a")
+ggsave("~/Google Drive/psp/analysis/plots/grin2a/grin2a_ko_vs_tauTg_lfcScatterP1.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+
+
+```
+```{r}
+makePlot <- function(dat, gen){
+  curDat <- setTauVars(dat)
+  curDat <- curDat %>% mutate(x=logFC.KO.over.WT, y=lfc)
+  curDat <- curDat %>% mutate(color=spl.ribo)
+  #currGen <- pa"ste("Sig", gen, "KO")
+  lab  <- c("", "RNA Splicing", "Cytosolic Ribosome", "Both")
+  scPlot <- makeScatterPlot(curDat, lab)
+  currLab <- paste("Log2-fold change (", gen, " KO/WT)", sep="")
+  scPlot <- scPlot + xlab(currLab) + ylab("Log2-fold change (Tau-tg/WT)")
+  scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==2 & x> 2) | (color==2 & y > 2) |  (color==1 & x > 2) |  (color==1 & y > 2)), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25)  
+  
+  scPlot <- scPlot + coord_cartesian(xlim = c(-5,5))
+  return(scPlot)
+}
+
+
+p <- makePlot(trio.xls, "Trio")
+ggsave("~/Google Drive/psp/analysis/plots/trio/trio_ko_vs_tauTg_splicing_ribosome.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+p <- makePlot(shank3.xls, "Shank3")
+ggsave("~/Google Drive/psp/analysis/plots/shank3/shank3_ko_vs_tauTg_splicing_ribosome.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+p <- makePlot(grin2a.xls, "Grin2a")
+ggsave("~/Google Drive/psp/analysis/plots/grin2a/grin2a_ko_vs_tauTg_splicing_ribosome.pdf", width = plotWidth, height = plotHeight, units = "in")
+```
+
+```{r}
+makePlot <- function(dat, gen){
+  curDat <- setTauVars(dat)
+  curDat <- curDat %>% mutate(x=logFC.KO.over.WT, y=lfc)
+  curDat <- curDat %>% mutate(color=glutamatergicSynapse)
+  #currGen <- paste("Sig", gen, "KO")
+  lab  <- c("", "Gluatamatergic Synapse")
+  scPlot <- makeScatterPlot(curDat, lab)
+  currLab <- paste("Log2-fold change (", gen, " KO/WT)", sep="")
+  scPlot <- scPlot + xlab(currLab) + ylab("Log2-fold change (Tau-tg/WT)")
+  scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 & x> 2) | (color==1 & y > 2) |  (color==1 & x < -2) |  (color==1 & y < -2)), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25)  
+  
+  scPlot <- scPlot + coord_cartesian(xlim = c(-5,5))
+  return(scPlot)
+}
+
+
+p <- makePlot(trio.xls, "Trio")
+ggsave("~/Google Drive/psp/analysis/plots/trio/trio_ko_vs_tauTg_glutamatergic_synapse.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+p <- makePlot(shank3.xls, "Shank3")
+ggsave("~/Google Drive/psp/analysis/plots/shank3/shank3_ko_vs_tauTg_glutamatergic_synapse.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+p <- makePlot(grin2a.xls, "Grin2a")
+ggsave("~/Google Drive/psp/analysis/plots/grin2a/grin2a_ko_vs_tauTg_glutamatergic_synapse.pdf", width = plotWidth, height = plotHeight, units = "in")
+```
+
+```{r}
+makePlot <- function(dat, gen){
+  curDat <- setTauVars(dat)
+  curDat <- curDat %>% mutate(x=logFC.KO.over.WT, y=lfc)
+  curDat <- curDat %>% mutate(color=vgc)
+  #currGen <- paste("Sig", gen, "KO")
+  lab  <- c("", "Voltage gated ion channel")
+  scPlot <- makeScatterPlot(curDat, lab)
+  currLab <- paste("Log2-fold change (", gen, " KO/WT)", sep="")
+  scPlot <- scPlot + xlab(currLab) + ylab("Log2-fold change (Tau-tg/WT)")
+  scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 & x> 2) | (color==1 & y > 2) |  (color==1 & x < -2) |  (color==1 & y < -2)), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25)  
+  
+  scPlot <- scPlot + coord_cartesian(xlim = c(-5,5))
+  return(scPlot)
+}
+
+
+p <- makePlot(trio.xls, "Trio")
+ggsave("~/Google Drive/psp/analysis/plots/trio/trio_ko_vs_tauTg_voltage_gated_ion_channel.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+p <- makePlot(shank3.xls, "Shank3")
+ggsave("~/Google Drive/psp/analysis/plots/shank3/shank3_ko_vs_tauTg_voltage_gated_ion_channel.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+p <- makePlot(grin2a.xls, "Grin2a")
+ggsave("~/Google Drive/psp/analysis/plots/grin2a/grin2a_ko_vs_tauTg_voltage_gated_ion_channel.pdf", width = plotWidth, height = plotHeight, units = "in")
 ```
 
 

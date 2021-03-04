@@ -1,0 +1,261 @@
+Plate information 
+Plate,Repeat,Barcode,Formula,Inside temperature at start,Inside temperature at end,Ambient temperature at start,Ambient temperature at end,Measurement date,
+1,1,="",Calc 1: Blank correction (Blanks on each plate) = X - B where X = Meas B B = Average of Blanks,N/A,N/A,N/A,N/A,1/25/2021 5:11:04 PM,
+
+Background information
+Plate,Label,Result,Signal,Flashes/Time,Meastime,MeasInfo,
+1,Meas B,0,50241,10,00:00:00.000,De=1st Ex=Btm Em=N/A,
+
+Calculated results: Calc 1: Blank correction (Blanks on each plate) = X - B where X = Meas B B = Average of Blanks
+,01,02,03,04,05,06,07,08,09,10,11,12,
+A,1.0710,1.0060,-0.030000,-0.031000,0.21900,0.22400,0.25600,0.24400,,,,,
+B,0.79700,0.77600,0.0,0.0,0.25300,0.23000,0.11000,0.11900,,,,,
+C,0.57200,0.54300,0.17700,0.19300,0.17100,0.18900,0.27600,0.27500,,,,,
+D,0.39200,0.40400,0.23300,0.23200,0.17400,0.18200,0.12200,0.12000,,,,,
+E,0.24100,0.26400,0.23100,0.23700,0.27200,0.28800,,,,,,,
+F,0.095000,0.096000,0.13800,0.13800,0.13800,0.12000,,,,,,,
+G,0.033000,0.029000,0.20900,0.21000,0.14000,0.14300,,,,,,,
+H,-0.024000,-0.021000,0.17900,0.18200,0.20600,0.23200,,,,,,,
+
+Curve information - Curve quality data 
+Formula,Slope at 50% binding,Intercept,ED-20,ED-50,ED-80,Correlation coefficient (R),Forced through origo,Fitting status,
+Calc 2: Curve fitting (blank corrected) = Curve fitting UNK calculation (blank corrected) where Measurement: Calc1: Blank correction (Blanks on each plate),0.00054418597,-0.026693748,430.723612464,1003.23010037,1575.73658827,0.99877051245,No,OK,
+
+Plate information 
+Plate,Repeat,Barcode,Formula,Inside temperature at start,Inside temperature at end,Ambient temperature at start,Ambient temperature at end,Measurement date,
+1,1,="",Calc 2: Curve fitting (blank corrected) = Curve fitting UNK calculation (blank corrected) where Measurement: Calc1: Blank correction (Blanks on each plate),N/A,N/A,N/A,N/A,1/25/2021 5:11:04 PM,
+
+Background information
+Plate,Label,Result,Signal,Flashes/Time,Meastime,MeasInfo,
+
+Calculated results: Calc 2: Curve fitting (blank corrected) = Curve fitting UNK calculation (blank corrected) where Measurement: Calc1: Blank correction (Blanks on each plate)
+,01,02,03,04,05,06,07,08,09,10,11,12,
+A,2017.12981052,1897.68534988,-6.0755920757,-7.9131991626,451.488572545,460.676607979,519.480034758,497.428749716,,,,,
+B,1513.62546873,1475.03571991,49.0526205292,49.0526205292,513.967213497,471.7022505,251.18940008,267.727863862,,,,,
+C,1100.1638742,1046.87326868,374.309074898,403.710788287,363.283432377,396.36035994,556.232176494,554.394569407,,,,,
+D,769.394598567,791.445883608,477.215071761,475.377464674,368.796253638,383.497110332,273.240685122,269.565470949,,,,,
+E,491.915928455,534.180891452,473.539857587,484.565500108,548.881748147,578.283461536,,,,,,,
+F,223.625293778,225.462900865,302.642398512,302.642398512,302.642398512,269.565470949,,,,,,,
+G,109.693654395,102.343226047,433.112501677,434.950108763,306.317612685,311.830433946,,,,,,,
+H,4.95005044526,10.4628717057,377.984289072,383.497110332,427.599680416,475.377464674,,,,,,,
+
+Plate information 
+Plate,Repeat,Barcode,Formula,Inside temperature at start,Inside temperature at end,Ambient temperature at start,Ambient temperature at end,Measurement date,
+1,1,="",Calc 3: Average of sample type = Average of samples where Measurement: Calc2: Curve fitting (blank corrected)  Sample: All samples,N/A,N/A,N/A,N/A,1/25/2021 5:11:04 PM,
+
+Background information
+Plate,Label,Result,Signal,Flashes/Time,Meastime,MeasInfo,
+
+Calculated results: Calc 3: Average of sample type = Average of samples where Measurement: Calc2: Curve fitting (blank corrected)  Sample: All samples
+,01,02,03,04,05,06,07,08,09,10,11,12,
+A,1957.4075802,1957.4075802,-6.9943956191,-6.9943956191,456.082590262,456.082590262,508.454392237,508.454392237,,,,,
+B,1494.33059432,1494.33059432,49.0526205292,49.0526205292,492.834731999,492.834731999,259.458631971,259.458631971,,,,,
+C,1073.51857144,1073.51857144,389.009931593,389.009931593,379.821896159,379.821896159,555.313372951,555.313372951,,,,,
+D,780.420241088,780.420241088,476.296268217,476.296268217,376.146681985,376.146681985,271.403078036,271.403078036,,,,,
+E,513.048409954,513.048409954,479.052678847,479.052678847,563.582604842,563.582604842,,,,,,,
+F,224.544097321,224.544097321,302.642398512,302.642398512,286.10393473,286.10393473,,,,,,,
+G,106.018440221,106.018440221,434.03130522,434.03130522,309.074023316,309.074023316,,,,,,,
+H,7.7064610755,7.7064610755,380.740699702,380.740699702,451.488572545,451.488572545,,,,,,,
+
+Plate information 
+Plate,Repeat,Barcode,Formula,Inside temperature at start,Inside temperature at end,Ambient temperature at start,Ambient temperature at end,Measurement date,
+1,1,="",Calc 4: %CV of sample type = 100 * SD / AVG where SD = Standard deviation of samples AVG = Average of samples Measurement: Calc2: Curve fitting (blank corrected)  Sample: All samples,N/A,N/A,N/A,N/A,1/25/2021 5:11:04 PM,
+
+Background information
+Plate,Label,Result,Signal,Flashes/Time,Meastime,MeasInfo,
+
+Calculated results: Calc 4: %CV of sample type = 100 * SD / AVG where SD = Standard deviation of samples AVG = Average of samples Measurement: Calc2: Curve fitting (blank corrected)  Sample: All samples
+,01,02,03,04,05,06,07,08,09,10,11,12,
+A,4.31489021248,4.31489021248,-18.57750838,-18.57750838,1.42450562683,1.42450562683,3.06666899237,3.06666899237,,,,,
+B,1.82603991252,1.82603991252,0.0,0.0,6.06406975836,6.06406975836,4.50725412427,4.50725412427,,,,,
+C,3.51015339073,3.51015339073,5.3443753559,5.3443753559,6.15786504599,6.15786504599,0.23399120128,0.23399120128,,,,,
+D,1.99797652164,1.99797652164,0.27281012239,0.27281012239,2.76356962746,2.76356962746,0.95753109483,0.95753109483,,,,,
+E,5.82515048522,5.82515048522,1.6274424375,1.6274424375,3.68892700688,3.68892700688,,,,,,,
+F,0.57867672664,0.57867672664,0.0,0.0,8.17497312738,8.17497312738,,,,,,,
+G,4.90248462266,4.90248462266,0.2993757401,0.2993757401,1.26123614497,1.26123614497,,,,,,,
+H,50.5829233233,50.5829233233,1.02383414744,1.02383414744,7.4828018455,7.4828018455,,,,,,,
+
+Plate information 
+Plate,Repeat,Barcode,Inside temperature at start,Inside temperature at end,Ambient temperature at start,Ambient temperature at end,Meas,ScanX,ScanY,Measinfo,Kinetics,Measurement date,
+1,1,="",28.15,28.15,26.3,26.3,Meas B,0,0,De=1st Ex=Btm Em=N/A,1,1/25/2021 5:11:04 PM,
+
+Background information
+Plate,Label,Result,Signal,Flashes/Time,Meastime,MeasInfo,
+1,Meas B,0,50241,10,00:00:00.000,De=1st Ex=Btm Em=N/A,
+
+Results for Meas B -  (A)
+,01,02,03,04,05,06,07,08,09,10,11,12,
+A,1.1910,1.1260,0.0900,0.0890,0.3390,0.3440,0.3760,0.3640,,,,,
+B,0.9170,0.8960,0.1200,0.1200,0.3730,0.3500,0.2300,0.2390,,,,,
+C,0.6920,0.6630,0.2970,0.3130,0.2910,0.3090,0.3960,0.3950,,,,,
+D,0.5120,0.5240,0.3530,0.3520,0.2940,0.3020,0.2420,0.2400,,,,,
+E,0.3610,0.3840,0.3510,0.3570,0.3920,0.4080,,,,,,,
+F,0.2150,0.2160,0.2580,0.2580,0.2580,0.2400,,,,,,,
+G,0.1530,0.1490,0.3290,0.3300,0.2600,0.2630,,,,,,,
+H,0.0960,0.0990,0.2990,0.3020,0.3260,0.3520,,,,,,,
+
+
+Basic assay information 
+Assay ID: ,,,,1705
+Assay Started: ,,,,1/25/2021 5:10:28 PM
+Assay Finished: ,,,,1/25/2021 5:11:31 PM
+Assay Exported: ,,,,1/25/2021 5:13:23 PM
+Assay Started By: ,,,,N/A
+Protocol ID: ,,,,100168
+Protocol Name: ,,,,Sameer Aryal BCA 660nm
+Serial#: ,,,,="23000584"
+
+
+
+Protocol information
+Protocol:
+Protocol name,,,,Sameer Aryal BCA 660nm
+Number of assay repeats,,,,1
+Start assay repeat each,,,,N/A
+Number of plate repeats,,,,1
+Start plate repeat each,,,,N/A
+Mode of measurement,,,,By Rows  bi-directional
+Rotated plate,,,,No
+Soft move,,,,No
+Protocol notes,,,, 
+
+Plate type:
+Name of the plate type,,,,96 General
+Number of rows,,,,8
+Number of columns,,,,12
+Number of the wells in the plate,,,,96
+Height of the plate,,,,14.35 mm
+Diameter of the well,,,,6.5 mm
+Volume of the well,,,,300 µl
+Optimized,,,,N/A
+
+Coordinates of corners:
+96 General
+14.38 mm x------------------------------------------------------ x 113.38 mm
+11.24 mm                                                           11.24 mm
+
+14.38 mm x------------------------------------------------------ x 113.38 mm
+74.24 mm                                                           74.24 mm
+
+Platemap:
+Plate,,,,1
+
+,01,02,03,04,05,06,07,08,09,10,11,12,
+A,STD1 ,STD1 ,STD9 ,STD9 ,UNK7 ,UNK7 ,UNK15,UNK15,     ,     ,     ,     
+B,STD2 ,STD2 ,BL   ,BL   ,UNK8 ,UNK8 ,UNK16,UNK16,     ,     ,     ,     
+C,STD3 ,STD3 ,UNK1 ,UNK1 ,UNK9 ,UNK9 ,UNK17,UNK17,     ,     ,     ,     
+D,STD4 ,STD4 ,UNK2 ,UNK2 ,UNK10,UNK10,UNK18,UNK18,     ,     ,     ,     
+E,STD5 ,STD5 ,UNK3 ,UNK3 ,UNK11,UNK11,     ,     ,     ,     ,     ,     
+F,STD6 ,STD6 ,UNK4 ,UNK4 ,UNK12,UNK12,     ,     ,     ,     ,     ,     
+G,STD7 ,STD7 ,UNK5 ,UNK5 ,UNK13,UNK13,     ,     ,     ,     ,     ,     
+H,STD8 ,STD8 ,UNK6 ,UNK6 ,UNK14,UNK14,     ,     ,     ,     ,     ,     
+
+ STD - Standard
+ UNK - Unknown
+ BL - Blank
+
+Calculations:
+Plate,,,,1
+ Formula index,,,,Calc 1
+ Formula name,,,,Blank correction (Blanks on each plate)
+ Formula,,,,Blank correction (Blanks on each plate) where X = B B = Average of Blanks
+
+ Formula index,,,,Calc 2
+ Formula name,,,,Curve fitting (blank corrected)
+ Formula,,,,Curve fitting (blank corrected) where Measurement: Calc 1: Blank correction (Blanks on each plate)
+ Fitting,,,,Linear regression
+ Method Options,,,,Unweighted
+ Curve direction,,,,Indefinite
+ Use Outliers,,,,No
+ X-axis transformation,,,,None
+ Y-axis transformation,,,,None
+ STD1,,,,2000
+ STD2,,,,1500
+ STD3,,,,1000
+ STD4,,,,750
+ STD5,,,,500
+ STD6,,,,250
+ STD7,,,,125
+ STD8,,,,25
+ STD9,,,,0
+ Formula unit,,,, 
+
+ Formula index,,,,Calc 3
+ Formula name,,,,Average of sample type
+ Formula,,,,Average of samples where Measurement: Calc 2: Curve fitting (blank corrected)  Sample: All samples
+
+ Formula index,,,,Calc 4
+ Formula name,,,,%CV of sample type
+ Formula,,,,100 * SD / AVG where SD = Standard deviation of samples AVG = Average of samples Measurement: Calc 2: Curve fitting (blank corrected)  Sample: All samples
+
+Auto export parameters:
+Export format,,,,Plate5
+Picture,,,,No
+Add plate number to the file name,,,,Yes
+Each plate to separate file,,,,No
+Field separator to use,,,,System
+File name format,,,,Z:\SameerAryal\SA_BCA_01_25_20_Plate_2.csv
+Exported data,,,,MeasB:Result Calc1:Blank correction (Blanks on each plate) Calc2:Curve fitting (blank corrected) Calc3:Average of sample type Calc4:%CV of sample type
+
+Operations:
+Plate 1
+  Measurement
+    Meas,,,,B
+    Tech,,,,Absorbance
+
+Measurements:
+Meas ,,,,B
+Exc. filter,,,,N/A
+Excitation wavelength,,,,660 nm
+Measurement height,,,,7.5 mm
+Number of flashes,,,,10
+Number of flashes integrated,,,,10
+Flash power,,,,100 %
+Excitation light,,,,100%
+Reference excitation light,,,,100%
+Reference AD gain,,,,1
+Reference signal,,,,9180
+Last edited,,,,1/25/2021 5:09:37 PM
+Last edited by,,,,EnSpire
+Factory preset,,,,No
+Optimizations
+  Baseline,,,,N/A
+  Measurement height,,,,9/23/2019 3:11:08 AM
+  Wavelength,,,,N/A
+  Z',,,,N/A
+
+Filters:
+Monochromator cutoff 230,,,,140
+Filter polarization,,,,None
+Description,,,,X230co Longpass=230nm  Tmin=90%
+Used with
+Last edited,,,,1/1/2011
+Last edited by,,,,Installation
+Factory preset,,,,Yes
+
+Monochromator cutoff 360,,,,141
+Filter polarization,,,,None
+Description,,,,X360co Longpass=360nm  Tmin=90%
+Used with
+Last edited,,,,1/1/2011
+Last edited by,,,,Installation
+Factory preset,,,,Yes
+
+Monochromator cutoff 585,,,,142
+Filter polarization,,,,None
+Description,,,,X585co Longpass=585nm  Tmin=75%
+Used with
+Last edited,,,,1/1/2011
+Last edited by,,,,Installation
+Factory preset,,,,Yes
+
+Instrument:
+Serial number,,,,23000584
+Nickname,,,,EnSpire
+
+
+
+
+
+
+Exported with EnSpire Workstation version 4.13.3005.1482

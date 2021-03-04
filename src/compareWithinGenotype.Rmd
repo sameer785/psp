@@ -31,10 +31,13 @@ grin2a.xls <- read_xlsx("../data/results_Glun2a-TMT16-Proteome_Two-sample_mod_T_
 rna.grin2a.het <- read_csv("../data/HP_HTWT-DESeq2_102020.csv")
 rna.grin2a.hom <- read_csv("../data/HP_HHWT-DESeq2_102020.csv")
 goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
+goPathways2 <- "~/Google Drive/geneSets/mSigDb/v7_2/curated/c2.cp.reactome.v7.2.symbols.gmt"
 pathways.go <- gmtPathways(goPathways)
 rnaSplicing <- str_to_title(pathways.go$GO_RNA_SPLICING)
 cytosolicRibosome <- str_to_title(pathways.go$GO_CYTOSOLIC_RIBOSOME)
 stressGranAs <- str_to_title(pathways.go$GO_STRESS_GRANULE_ASSEMBLY)
+glutSyn <- str_to_title(pathways.go$GO_GLUTAMATERGIC_SYNAPSE)
+vgc <- str_to_title(pathways.go$GO_VOLTAGE_GATED_ION_CHANNEL_ACTIVITY)
 # shank3.xls <- shank3.xls %>% filter(Shank3_PSD_TMT11_Proteome.numSpectra > 5)
 # trio.xls <- trio.xls %>% filter(Trio_PSD_TMT11_Proteome.numSpectra > 5)
 # grin2a.xls <- grin2a.xls %>% filter(Glun2A_PSD_TMT16_Proteome.numSpectra > 5)
@@ -59,7 +62,10 @@ setVars<-function(dat.xls){
   dat.xls <- dat.xls %>% mutate(splicing = ifelse(geneSymbol %in% rnaSplicing, 1, 0))
   dat.xls <- dat.xls %>% mutate(cytosolicRibosome = ifelse(geneSymbol %in% cytosolicRibosome, 2, 0))
   dat.xls <- dat.xls %>% mutate(spl.ribo = splicing + cytosolicRibosome)
-  #dat.xls <- dat.xls %>% mutate(stressGranuleAssembly = ifelse(geneSymbol %in% granuleGenes, 1, 0))
+ # dat.xls <- dat.xls %>% mutate(stressGranuleAssembly = ifelse(geneSymbol %in% granuleGenes, 1, 0))
+  dat.xls <- dat.xls %>% mutate(glutSyn = ifelse(geneSymbol %in% glutSyn, 1, 0))
+  dat.xls <- dat.xls %>% mutate(vgc = ifelse(geneSymbol %in% vgc, 1, 0))
+
   return (dat.xls)
 }
 
@@ -114,6 +120,39 @@ ggsave(plot = shank3.hetko, "~/Google Drive/psp/analysis/plots/shank3/lfcScatter
 
 grin2a.hetko <- makeHetKoPlot(grin2a.xls)
 ggsave(plot = grin2a.hetko, "~/Google Drive/psp/analysis/plots/grin2a/lfcScatter_ko_v_het.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+
+```
+
+```{r}
+
+makeHetKoPlot <- function(dat.xls){
+  fcCutOff <- 2
+  dat.curDat <- getVars(dat.xls)
+  lab  <- c("NS", "Sig. KO/WT", "Sig. Het/WT", "Sig. Both")
+  scPlot <- makeScatterPlot(dat.curDat, lab)
+  scPlot <- scPlot + xlab("Log2-fold change (KO/WT)") + ylab("Log2-fold change (Het/WT)")
+  scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==3 & (x < -fcCutOff | y < -fcCutOff)),
+                                                      as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black',
+                                                      segment.size = .5, segment.alpha = .25)
+    scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 | color==2) & (x< -5 | y< -5)), as.character(geneSymbol), '')), 
+                                       show.legend = FALSE, 
+                                       segment.color='black', 
+                                       segment.size = .5, 
+                                       segment.alpha = .25)
+  
+  scPlot <- scPlot + coord_cartesian(ylim=c(-3,0), xlim=c(-3,0))
+  return(scPlot)
+}
+
+trio.hetko <- makeHetKoPlot(trio.xls)
+ggsave(plot = trio.hetko, "~/Google Drive/psp/analysis/plots/trio/lfcScatter_ko_v_het_NEGATIVE.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+shank3.hetko <- makeHetKoPlot(shank3.xls)
+ggsave(plot = shank3.hetko, "~/Google Drive/psp/analysis/plots/shank3/lfcScatter_ko_v_het_NEGAGIVE.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+grin2a.hetko <- makeHetKoPlot(grin2a.xls)
+ggsave(plot = grin2a.hetko, "~/Google Drive/psp/analysis/plots/grin2a/lfcScatter_ko_v_het_NEGATIVE.pdf", width = plotWidth, height = plotHeight, units = "in")
 
 
 ```
@@ -261,8 +300,28 @@ shank3.go <- getGoAnalyses(shank3.xls)
 trio.go <- getGoAnalyses(trio.xls) 
 ```
 ```{r}
+tst.koOverWt <- 't.KO.over.WT'
+tst.hetOverWt <- 't.Het.over.WT'
+tst.koOverHet <- 't.KO.over.Het'
+
+getGoAnalyses <- function(dat){
+  dat.koOverWt.go <- doGoAnalysis(dat, goPathways2, tStat=tst.koOverWt)
+  dat.hetOverWt.go <- doGoAnalysis(dat, goPathways2, tStat=tst.hetOverWt)
+  dat.koOverHet.go <- doGoAnalysis(dat, goPathways2, tStat=tst.koOverHet)
+
+  dat.go <- inner_join(dat.koOverWt.go, dat.hetOverWt.go, by="pathway")
+  dat.go <- inner_join(dat.go, dat.koOverHet.go, by="pathway")
+  return(dat.go)
+}
+
+grin2a.go2 <- getGoAnalyses(grin2a.xls)
+shank3.go2 <- getGoAnalyses(shank3.xls)
+trio.go2 <- getGoAnalyses(trio.xls) 
+```
+
+```{r}
 setGoScatter <- function(dat.go){
-  pVal = 10e-3
+  pVal = 10e-2
   dat.go <- dat.go %>% mutate(koOverWt.sig = ifelse(padj.x < pVal, 1, 0))
   dat.go <- dat.go %>% mutate(hetOverWt.sig = ifelse(padj.y < pVal, 2, 0))
   dat.go <- dat.go %>% mutate(both.sig = as.factor(koOverWt.sig + hetOverWt.sig))
@@ -300,9 +359,30 @@ ggsave(plot = shank3.go.scatter, "~/Google Drive/psp/analysis/plots/shank3/goSca
 trio.go <- setGoScatter(trio.go)
 trio.go.scatter <- getGoScatter(trio.go)
 # ggsave(plot = trio.go.scatter, "~/Google Drive/psp/analysis/plots/trio/goScatter_koOverWt_v_hetOverWt.pdf", width = plotWidth, height = plotHeight, units = "in")
-trio.go.scatter <- trio.go.scatter + coord_cartesian(xlim=c(0,4), ylim = c(0,3))
+#trio.go.scatter <- trio.go.scatter + coord_cartesian(xlim=c(0,4), ylim = c(0,3))
 ggsave(plot = trio.go.scatter, "~/Google Drive/psp/analysis/plots/trio/goScatter_koOverWt_v_hetOverWt_POSITIVE.pdf", width = plotWidth, height = plotHeight, units = "in")
 ```
+
+```{r}
+plotWidth <- 15
+plotHeight <- (6/8)*plotWidth
+grin2a.go <- setGoScatter(grin2a.go)
+grin2a.go.scatter <- getGoScatter(grin2a.go)
+grin2a.go.scatter <- grin2a.go.scatter + coord_cartesian(xlim=c(-3,0), ylim = c(-3,0))
+ggsave(plot = grin2a.go.scatter, "~/Google Drive/psp/analysis/plots/grin2a/goScatter_koOverWt_v_hetOverWt_NEGATIVE.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+shank3.go <- setGoScatter(shank3.go)
+shank3.go.scatter <- getGoScatter(shank3.go)
+# ggsave(plot = shank3.go.scatter, "~/Google Drive/psp/analysis/plots/shank3/goScatter_koOverWt_v_hetOverWt.pdf", width = plotWidth, height = plotHeight, units = "in")
+shank3.go.scatter <- shank3.go.scatter + coord_cartesian(xlim=c(-3, 0), ylim = c(-3,0))
+ggsave(plot = shank3.go.scatter, "~/Google Drive/psp/analysis/plots/shank3/goScatter_koOverWt_v_hetOverWt_NEGATIVE.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+trio.go <- setGoScatter(trio.go)
+trio.go.scatter <- getGoScatter(trio.go)
+trio.go.scatter <- trio.go.scatter + coord_cartesian(xlim=c(-3,0), ylim = c(-3,0))
+ggsave(plot = trio.go.scatter, "~/Google Drive/psp/analysis/plots/trio/goScatter_koOverWt_v_hetOverWt_NEGATIVE.pdf", width = plotWidth, height = plotHeight, units = "in")
+```
+
 
 ```{r}
 
@@ -311,12 +391,15 @@ all.go <- inner_join(grin2a.go, shank3.go, by="pathway", suffix=c(".grin2a", ".s
 all.go <- inner_join(all.go, trio.go, by="pathway")
 sig.go <- all.go %>% filter(padj.x.grin2a < pVal | padj.x.shank3 < pVal | padj.x < pVal | padj.y.grin2a < pVal | padj.y.shank3 < pVal | padj.y < pVal)
 sig.nes <- sig.go %>% select(pathway, NES.x.grin2a, NES.y.grin2a, NES.x.shank3, NES.y.shank3, NES.x, NES.y)
-sig.nes <- sig.nes %>% rename(grin2a.koOverWt=NES.x.grin2a, grin2a.hetOverWt=NES.y.grin2a, shank3.koOverWt=NES.x.shank3, shank3.hetOverWt=NES.y.shank3, trio.koOverWt=NES.x, trio.hetOverWt=NES.y)
+sig.nes <- sig.nes %>% rename(Grin2a.koOverWt=NES.x.grin2a, grin2a.hetOverWt=NES.y.grin2a, shank3.koOverWt=NES.x.shank3, shank3.hetOverWt=NES.y.shank3, trio.koOverWt=NES.x, trio.hetOverWt=NES.y)
 sig.nes <- as.data.frame(sig.nes)
 rownames(sig.nes) <- substring(sig.nes$pathway,4)
 sig.nes <- sig.nes[,c(-1)]
-sig.nes.hmap <- Heatmap(sig.nes, row_names_gp = gpar(fontsize = 6), heatmap_legend_param = list(title=NULL))
-pdf(file = "~/Google Drive/psp/analysis/plots/heatmap_anySigGo_nes.pdf", width = 5,  height = 40)
+library(circlize)
+col_fun = colorRamp2(c(-3, 0, 3), c("blue", "white", "red"))
+col_fun(seq(-3, 3))
+sig.nes.hmap <- Heatmap(sig.nes, row_names_gp = gpar(fontsize = 6), col=col_fun, heatmap_legend_param = list(title=NULL))
+pdf(file = "~/Google Drive/psp/analysis/plots/combined/heatmap_anySigGo_nes.pdf", width = 5,  height = 40)
 sig.nes.hmap
 dev.off()
 ```
@@ -331,8 +414,10 @@ sig.nes <- sig.nes %>% rename(grin2a.koOverWt=NES.x.grin2a, grin2a.hetOverWt=NES
 sig.nes <- as.data.frame(sig.nes)
 rownames(sig.nes) <- substring(sig.nes$pathway,4)
 sig.nes <- sig.nes[,c(-1)]
-sig.nes.hmap <- Heatmap(sig.nes, row_names_gp = gpar(fontsize = 12), heatmap_legend_param = list(title=NULL))
-pdf(file = "~/Google Drive/psp/analysis/plots/heatmap_allSigGo_nes.pdf", width = 10,  height = 10)
+col_fun = colorRamp2(c(-3, 0, 3), c("blue", "white", "red"))
+col_fun(seq(-3, 3))
+sig.nes.hmap <- Heatmap(sig.nes, row_names_gp = gpar(fontsize = 12), col=col_fun, heatmap_legend_param = list(title=NULL))
+pdf(file = "~/Google Drive/psp/analysis/plots/combined/heatmap_allSigGo_nes.pdf", width = 10,  height = 10)
 sig.nes.hmap
 dev.off()
 ```
@@ -418,7 +503,7 @@ ggsave("~/Google Drive/psp/analysis/plots/grin2a/RNA_hetOverWt_v_PSD_hetOverWt_S
 ```{r}
 all.xls <- full_join(grin2a.xls, shank3.xls, by="id", suffix=c(".grin2a", ".shank3"))
 all.xls <- full_join(all.xls, trio.xls, by="id")
-schemaGenes <- as.factor(c("Setd1a", "Cul1", "Xpo7", "Trio", "Cacna1g", "Sp4", "Gria3", "Grin2a", "Herc1", "Rb1cc1", "Hcn4", "Akap11", "Znf136", "Srrm2", "Nr3c2"))
+schemaGenes <- as.factor(c("Setd1a", "Cul1", "Xpo7", "Trio", "Cacna1g", "Sp4", "Gria3", "Grin2a", "Herc1", "Rb1cc1", "Hcn4", "Akap11", "Znf136", "Srrm2", "Nr3c2", "Zmym2", "Fam120a", "Slf2", "Kdm6b", "Dnm3", "Ash1l", "Stag1", "Hist1h1e", "Prep", "Magec1", "Magi2", "Dagla", "Or4p4", "Slc22a11", "Ankrd12", "Eif2s3x", "Eif2s3y"))
 schemaGenes.xls <- all.xls %>% select(geneSymbol, geneSymbol.grin2a, geneSymbol.shank3, logFC.KO.over.WT.grin2a, logFC.Het.over.WT.grin2a, logFC.KO.over.WT.shank3, logFC.Het.over.WT.shank3, logFC.KO.over.WT, logFC.Het.over.WT) %>% filter(geneSymbol %in% schemaGenes | geneSymbol.grin2a %in% schemaGenes | geneSymbol.shank3 %in% schemaGenes)
 
 cNames <- colnames(schemaGenes.xls)
@@ -430,6 +515,184 @@ granuleGenes <- read_csv("../data/youn_2018_rna_granule_proteome.csv")
 granuleGenes <- str_to_title(granuleGenes$geneSymbol)
 granuleGenes.xls <- all.xls %>% select(geneSymbol, geneSymbol.grin2a, geneSymbol.shank3, logFC.KO.over.WT.grin2a, logFC.Het.over.WT.grin2a, logFC.KO.over.WT.shank3, logFC.Het.over.WT.shank3, logFC.KO.over.WT, logFC.Het.over.WT) %>% filter(geneSymbol %in% granuleGenes | geneSymbol.grin2a %in% granuleGenes | geneSymbol.shank3 %in% granuleGenes)
 granuleGenes.xls
+```
+```{r}
+getVars<-function(dat.xls){
+  curDat <- dat.xls %>% select(geneSymbol, 
+                             logFC.KO.over.WT, 
+                             logFC.Het.over.WT,
+                             logFC.KO.over.Het,
+                             stressGranuleAssembly
+                             )
+  curDat <-  curDat %>% mutate(x=logFC.KO.over.WT, y=logFC.Het.over.WT, color=stressGranuleAssembly)
+  return(curDat)
+}
+
+plotWidth <- 12
+plotHeight <- 8
+
+makeHetKoPlot <- function(dat.xls){
+  fcCutOff <- 2
+  dat.curDat <- getVars(dat.xls)
+  lab <- c("", "Stress granule")
+  scPlot <- makeScatterPlot(dat.curDat, lab)
+  scPlot <- scPlot + xlab("Log2-fold change (KO/WT)") + ylab("Log2-fold change (Het/WT)")
+  scPlot <- scPlot + geom_text_repel(aes(label=ifelse((((color==1 | color==2) & x> 1) | ((color==1 | color==2) & y > 1)) | (as.character(geneSymbol)=="G3bp1") | (as.character(geneSymbol)=="G3bp2"), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25, size=3)
+  scPlot <- scPlot + coord_cartesian(ylim=c(-5,5), xlim=c(-5,5))
+  return(scPlot)
+}
+
+trio.hetko <- makeHetKoPlot(trio.xls)
+ggsave(plot = trio.hetko, "~/Google Drive/psp/analysis/plots/trio/lfcScatter_ko_v_het_stress_granule.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+shank3.hetko <- makeHetKoPlot(shank3.xls)
+ggsave(plot = shank3.hetko, "~/Google Drive/psp/analysis/plots/shank3/lfcScatter_ko_v_het_stress_granule.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+grin2a.hetko <- makeHetKoPlot(grin2a.xls)
+ggsave(plot = grin2a.hetko, "~/Google Drive/psp/analysis/plots/grin2a/lfcScatter_ko_v_het_stress_granule.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+```
+
+```{r}
+getVars<-function(dat.xls){
+  curDat <- dat.xls %>% select(geneSymbol, 
+                             logFC.KO.over.WT, 
+                             logFC.Het.over.WT,
+                             logFC.KO.over.Het,
+                             glutSyn
+                             )
+  curDat <-  curDat %>% mutate(x=logFC.KO.over.WT, y=logFC.Het.over.WT, color=glutSyn)
+  return(curDat)
+}
+
+plotWidth <- 12
+plotHeight <- 8
+
+makeHetKoPlot <- function(dat.xls){
+  fcCutOff <- 2
+  dat.curDat <- getVars(dat.xls)
+  lab <- c("", "Glutamatergic synapse")
+  scPlot <- makeScatterPlot(dat.curDat, lab)
+  scPlot <- scPlot + xlab("Log2-fold change (KO/WT)") + ylab("Log2-fold change (Het/WT)")
+  scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 & x< -2) | (color==1 & y < -2) | (color==1 & y > 2) | (color==1 & x > 2)), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25, size=3)
+  scPlot <- scPlot + coord_cartesian(ylim=c(-5,5), xlim=c(-5,5))
+  return(scPlot)
+}
+
+trio.hetko <- makeHetKoPlot(trio.xls)
+ggsave(plot = trio.hetko, "~/Google Drive/psp/analysis/plots/trio/lfcScatter_ko_v_het_glutamatergic_synapse.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+shank3.hetko <- makeHetKoPlot(shank3.xls)
+ggsave(plot = shank3.hetko, "~/Google Drive/psp/analysis/plots/shank3/lfcScatter_ko_v_het_glutamatergic_synapse.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+grin2a.hetko <- makeHetKoPlot(grin2a.xls)
+ggsave(plot = grin2a.hetko, "~/Google Drive/psp/analysis/plots/grin2a/lfcScatter_ko_v_het_glutamatergic_synapse.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+```
+
+```{r}
+getVars<-function(dat.xls){
+  curDat <- dat.xls %>% select(geneSymbol, 
+                             logFC.KO.over.WT, 
+                             logFC.Het.over.WT,
+                             logFC.KO.over.Het,
+                             vgc
+                             )
+  curDat <-  curDat %>% mutate(x=logFC.KO.over.WT, y=logFC.Het.over.WT, color=vgc)
+  return(curDat)
+}
+
+plotWidth <- 12
+plotHeight <- 8
+
+makeHetKoPlot <- function(dat.xls){
+  fcCutOff <- 2
+  dat.curDat <- getVars(dat.xls)
+  lab <- c("", "Voltage-gated ion channel")
+  scPlot <- makeScatterPlot(dat.curDat, lab)
+  scPlot <- scPlot + xlab("Log2-fold change (KO/WT)") + ylab("Log2-fold change (Het/WT)")
+  scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 & x< -2) | (color==1 & y < -2) | (color==1 & y > 2) | (color==1 & x > 2)), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25, size=3)
+  scPlot <- scPlot + coord_cartesian(ylim=c(-5,5), xlim=c(-5,5))
+  return(scPlot)
+}
+
+trio.hetko <- makeHetKoPlot(trio.xls)
+ggsave(plot = trio.hetko, "~/Google Drive/psp/analysis/plots/trio/lfcScatter_ko_v_het_voltage_gated_ion_channel.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+shank3.hetko <- makeHetKoPlot(shank3.xls)
+ggsave(plot = shank3.hetko, "~/Google Drive/psp/analysis/plots/shank3/lfcScatter_ko_v_het_voltage_gated_ion_channel.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+grin2a.hetko <- makeHetKoPlot(grin2a.xls)
+ggsave(plot = grin2a.hetko, "~/Google Drive/psp/analysis/plots/grin2a/lfcScatter_ko_v_het_voltage_gated_ion_channel.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+```
+
+```{r}
+setGoScatter <- function(dat.go){
+  pVal = 10e-3
+  dat.go <- dat.go %>% mutate(trio.sig = ifelse(padj.x < pVal, 1, 0))
+  dat.go <- dat.go %>% mutate(shank3.sig = ifelse(padj.x.shank3 < pVal, 2, 0))
+  dat.go <- dat.go %>% mutate(both.sig = as.factor(trio.sig + shank3.sig))
+  dat.go <- dat.go %>% mutate(X=NES.x, Y=NES.x.shank3)
+  dat.go <- dat.go %>% mutate(color=both.sig)
+  return (dat.go)
+}
+
+getGoScatter <- function(dat.go){
+  sa <- dat.go %>% select(pathway, X, Y, color)
+  sa <- na.omit(sa)
+  lab  <- c("NS", "Sig. Trio (KO/WT)", "Sig. Shank3 (KO/WT)", "Sig. Both")
+  koOverWtVhetOverWt.go.plot <- plotGoScatter(sa, lab)
+  koOverWtVhetOverWt.go.plot <- koOverWtVhetOverWt.go.plot + xlab("Normalized Enrichment Score - Trio - (KO/WT)") + ylab("Normalized Enrichment Score - Shank3 - (KO/WT)")
+  return(koOverWtVhetOverWt.go.plot)
+}
+
+pVal <- 10e-5
+all.go <- inner_join(grin2a.go, shank3.go, by="pathway", suffix=c(".grin2a", ".shank3"))
+all.go <- inner_join(all.go, trio.go, by="pathway")
+trioVshank3.go <- getGoScatter(setGoScatter(all.go))
+trioVshank3.go
+ggsave(plot = trioVshank3.go, "~/Google Drive/psp/analysis/plots/combined/goScatter_trio_ko_v_shank3_ko_DIVERGENT.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+```
+
+```{r}
+require(circlize)
+makeIndividualGoHeatmap <- function(goDat, pVal){
+  
+  go.neg <- goDat %>% filter(NES.x < 0 | NES.y < 0)
+  go.neg.anySig <- go.neg %>% filter(padj.x < padjPval | padj.y < padjPval)
+  dim(go.neg.anySig)
+  
+  go.sig.nes <- go.neg.anySig %>% select(pathway, NES, NES.y, NES.x)
+  go.sig.nes <- go.sig.nes %>% rename(koOverHet=NES, hetOverWt=NES.y, koOverWt=NES.x)
+  
+  go.sig.nes <- as.data.frame(go.sig.nes)
+  rownames(go.sig.nes) <- substring(go.sig.nes$pathway,4)
+  go.sig.nes <- go.sig.nes[,c(-1)]
+  col_fun = colorRamp2(c(-3, 0, 3), c("blue", "white", "red"))
+  go.sig.nes.hmap <- Heatmap(go.sig.nes, row_names_gp = gpar(fontsize = 6), col=col_fun, heatmap_legend_param = list(title=NULL), cluster_columns = FALSE, column_labels = c("KO/Het", "Het/WT", "KO/WT"))
+  return(go.sig.nes.hmap)
+}
+
+padjPval <- 10e-3
+grin2a.go.sig.nes.hmap <- makeIndividualGoHeatmap(grin2a.go, padjPval)
+pdf(file = "~/Google Drive/psp/analysis/plots/grin2a/heatmap_allSigGo_E3_nes.pdf", width = 5,  height = 15)
+grin2a.go.sig.nes.hmap
+dev.off()
+
+padjPval <- 10e-6
+grin2a.go.sig.nes.hmap <- makeIndividualGoHeatmap(shank3.go, padjPval)
+pdf(file = "~/Google Drive/psp/analysis/plots/shank3/heatmap_allSigGo_E3_nes.pdf", width = 5,  height = 15)
+grin2a.go.sig.nes.hmap
+dev.off()
+
+padjPval <- 10e-6
+grin2a.go.sig.nes.hmap <- makeIndividualGoHeatmap(trio.go, padjPval)
+pdf(file = "~/Google Drive/psp/analysis/plots/trio/heatmap_allSigGo_E3_nes.pdf", width = 5,  height = 15)
+grin2a.go.sig.nes.hmap
+dev.off()
+
 
 ```
 

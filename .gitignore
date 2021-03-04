@@ -12,6 +12,8 @@
 .Rhistory
 .RData
 .Ruserdata
+.xlsx
+.xls
 
 # Packages #
 ############

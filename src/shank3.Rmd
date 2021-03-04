@@ -52,8 +52,9 @@ colnames(shank3.abundances) <- shank3.sampleSheet$cleanId
 
 # Remove any rows with NA
 shank3.abundances.clean <- na.omit(shank3.abundances)
-shank3.abundances.pca.plot <- makePcaPlot(shank3.abundances.clean, shank3.sampleSheet$color)
+shank3.abundances.pca.plot <- makePcaPlot(shank3.abundances.clean, as.factor(shank3.sampleSheet$color))
 shank3.abundances.pca.plot
+ggsave("~/Google Drive/psp/analysis/plots/shank3/pca.pdf", width = 8, height = 6, units = "in")
 ```
 
 Does log transfromation reveal any underlying structure?

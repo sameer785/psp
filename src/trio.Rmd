@@ -54,8 +54,9 @@ colnames(trio.abundances) <- trio.sampleSheet$cleanId
 
 # Remove any rows with NA
 trio.abundances.clean <- na.omit(trio.abundances)
-trio.abundances.pca.plot <- makePcaPlot(trio.abundances.clean, trio.sampleSheet$color)
+trio.abundances.pca.plot <- makePcaPlot(trio.abundances.clean, as.factor(trio.sampleSheet$color))
 trio.abundances.pca.plot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/trio/pca.pdf", width = 8, height = 6, units = "in")
 
 ```
 

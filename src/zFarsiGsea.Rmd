@@ -1,0 +1,59 @@
+---
+title: "GSEA on bulk and regional RNA-Seq LFCs from Grin2a and Grin2b mice"
+output: html_notebook
+---
+
+Sameer Aryal for Z. Farsi
+02/02/2021
+
+```{r}
+# Load data and libraries
+rm(list=ls())
+require(readxl)
+require(tidyverse)
+require(tm)
+require(ggfortify)
+require(PCAtools)
+require(reshape2)
+require(ggbeeswarm)
+require(EnhancedVolcano)
+require(RColorBrewer)
+require(fgsea)
+require(ComplexHeatmap)
+require(reshape2)
+files.sources = list.files("../functions" , full.names = TRUE)
+invisible(lapply(files.sources, source))
+```
+
+```{r}
+zfdat.bulk <- read_xlsx("~/Google Drive/psp/data/210201_log2FC_for Sameer.xlsx", sheet = 1, na="NaN")
+zfdat.sn.grin2a <- read_xlsx("~/Google Drive/psp/data/210201_log2FC_for Sameer.xlsx", sheet = 2,  na="NaN")
+zfdat.sn.grin2b <- read_xlsx("~/Google Drive/psp/data/210201_log2FC_for Sameer.xlsx", sheet = 3,  na="NaN")
+```
+
+
+```{r}
+doGo <- function(tbl){
+  nCols <- c(2:dim(tbl)[2])
+
+  for (item in nCols){
+    currDat <- tbl %>% mutate(tStat=.[[item]])
+    currCols <- currDat %>% select(gene, tStat)
+    currRes <- doGseaZfarsi(currCols, goPathways)
+    currResMod <- currRes %>% mutate(leadingEdge = map_chr(leadingEdge, toString))
+    resNameBase <- names(tbl[item])
+    resNamePath <- "~/Google Drive/psp/analysis/res_zFarsi/"
+    resName <- paste(resNamePath, resNameBase, ".csv", sep="")
+    write_csv(currResMod, file = resName)
+  }
+}
+
+```
+
+```{r}
+goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
+doGo(zfdat.bulk)
+doGo(zfdat.sn.grin2a)
+doGo(zfdat.sn.grin2b)
+```
+

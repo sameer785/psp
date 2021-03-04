@@ -13,16 +13,41 @@ plotGoScatter <- function(dat, lab){
   gp <- gp + scale_shape_manual(values = c(16, 21, 21, 23), labels=lab)
   gp <- gp + scale_x_continuous(breaks = scales::pretty_breaks(n = 10))
   gp <- gp + scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
-  gp <- gp + theme(legend.position = c(0.15,0.9))
-  gp <- gp + geom_text_repel(aes(label=ifelse(color==3 & (X>0 | Y>0), as.character(str_to_title(substring(pathway,4))), '')),
+  #gp <- gp + theme(legend.position = c(0.15,0.9))
+  gp <- gp + theme(legend.position = c(0.85,0.5))
+  
+  # gp <- gp + geom_text_repel(aes(label=ifelse(color==3 & (X>0 | Y>0), as.character(str_to_title(substring(pathway,4))), '')),
+  #                            show.legend = FALSE,
+  #                            segment.color='black',
+  #                            segment.size = .5,
+  #                            segment.alpha = .25, size=3)
+  gp <- gp + geom_text_repel(aes(label=ifelse(color==3 & (X < 0 | Y < 0 ), as.character(pathway), '')),
                              show.legend = FALSE,
                              segment.color='black',
                              segment.size = .5,
                              segment.alpha = .25, size=3)
-  # gp <- gp + geom_text_repel(aes(label=ifelse(color==3 & (X < -3 | Y < -2.5 ), as.character(pathway), '')), 
-  #                            show.legend = FALSE, 
-  #                            segment.color='black', 
-  #                            segment.size = .5, 
+  # gp <- gp + geom_text_repel(aes(label=ifelse((color==1 | color==2) & ((X < -2.25 & Y > 0) | (X < 0 & Y < -2.75)), as.character(pathway), '')),
+  #                            show.legend = FALSE,
+  #                            segment.color='black',
+  #                            segment.size = .5,
   #                            segment.alpha = .25, size=3)
+  # gp <- gp + geom_text_repel(aes(label=ifelse((color==1) & (X >0 & Y <0), as.character(pathway), '')),
+  #                            show.legend = FALSE,
+  #                            segment.color='black',
+  #                            segment.size = .5,
+  #                            segment.alpha = .25, size=3)
+  
+  # gp <- gp + geom_text_repel(aes(label=ifelse((color==1 | color==2) & ((X < -2.25)), as.character(pathway), '')),
+  #                            show.legend = FALSE,
+  #                            segment.color='black',
+  #                            segment.size = .5,
+  #                            segment.alpha = .25, size=3)
+  # 
+  # gp <- gp + geom_text_repel(aes(label=ifelse((color==1 | color==2) & ((X > 0 & Y < 0)), as.character(pathway), '')),
+  #                            show.legend = FALSE,
+  #                            segment.color='black',
+  #                            segment.size = .5,
+  #                            segment.alpha = .25, size=3)
+  
   return(gp)
 }

@@ -55,9 +55,9 @@ colnames(grin2a.abundances) <- grin2a.sampleSheet$cleanId
 
 # Remove any rows with NA
 grin2a.abundances.clean <- na.omit(grin2a.abundances)
-grin2a.abundances.pca.plot <- makePcaPlot(grin2a.abundances.clean, grin2a.sampleSheet$color)
+grin2a.abundances.pca.plot <- makePcaPlot(grin2a.abundances.clean, as.factor(grin2a.sampleSheet$color))
 grin2a.abundances.pca.plot
-ggsave(filename = "~/Google Drive/psp/analysis/plots/grin2a/pca.pdf", width = 12, height = 8, units = "in")
+ggsave(filename = "~/Google Drive/psp/analysis/plots/grin2a/pca.pdf", width = 8, height = 6, units = "in")
 ```
 
 
@@ -185,9 +185,10 @@ Carrying out Gene Set Enrichment Analysis now.
 # Gene ontology analysis
 grin2a.xls <- grin2a.xls %>% mutate(t.KO.over.WT = t.WT.over.KO*(-1))
 goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
-grin2a.go <- doGoAnalysis(grin2a.xls, goPathways)
-grin2a.go$up
-grin2a.go$down
+tst.koOverWt <- 't.KO.over.WT'
+grin2a.go <- doGoAnalysis(grin2a.xls, goPathways, tst.koOverWt)
+# grin2a.go$up
+# grin2a.go$down
 ```
 ```{r}
 goPathways2 <- "~/Google Drive/geneSets/mSigDb/v7_2/curated/c2.cp.kegg.v7.2.symbols.gmt"
