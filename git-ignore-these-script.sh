@@ -1,0 +1,25 @@
+#!/bin/bash
+
+git rm --cached ./bca/9.15 Trio PSD BCA Calc.xlsx
+git rm --cached ./bca/01_20_21_BCA_Plate_1.xlsx
+git rm --cached ./bca/~$SA_BCA_02_17_21_Plate_2.xlsx
+git rm --cached ./bca/01_20_21_SA_BCA_Plate_2.xlsx
+git rm --cached ./bca/~$SA_BCA_02_18_21_Plate_1_ReRun.xlsx
+git rm --cached ./bca/SA_BCA_02_17_21_Plate_1.xlsx
+git rm --cached ./bca/~$SA_BCA_02_17_21_Plate_1.xlsx
+git rm --cached ./bca/SA_BCA_02_17_21_Plate_2.xlsx
+git rm --cached ./bca/SA_BCA_02_18_21_Plate_2_Rd_3.xlsx
+git rm --cached ./bca/SA_BCA_02_18_21_Plate_1_ReRun.xlsx
+git rm --cached ./bca/~$SA_BCA_02_18_21_Plate_2_Rd_3.xlsx
+git rm --cached ./westerns/quantifications/quantifications.xlsx
+git rm --cached ./data/results_PSD-Trio-IMAC_Two-sample_mod_T_2020-07-24.xlsx
+git rm --cached ./data/~$results_Glun2a-TMT16-Proteome_Two-sample_mod_T_2020-11-30.xlsx
+git rm --cached ./data/results_PSD-Trio-proteome_Two-sample_mod_T_2020-07-24.xlsx
+git rm --cached ./data/results_PSD-Shank3-proteome_Two-sample_mod_T_2020-07-22.xlsx
+git rm --cached ./data/~$results_PSD-Shank3-proteome_Two-sample_mod_T_2020-07-22.xlsx
+git rm --cached ./data/results_Glun2a-TMT16-pSTY_Two-sample_mod_T_2020-11-30.xlsx
+git rm --cached ./data/~$210201_log2FC_for Sameer.xlsx
+git rm --cached ./data/210201_log2FC_for Sameer.xlsx
+git rm --cached ./data/results_Glun2a-TMT16-Proteome_Two-sample_mod_T_2020-11-30.xlsx
+git rm --cached ./data/results_PSD-Shank3-IMAC_Two-sample_mod_T_2020-07-23.xlsx
+git rm --cached ./data/tauTgPsdProteomics.xlsx
