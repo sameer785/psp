@@ -72,7 +72,7 @@ makeHeatMap <- function(bigTab, geneList){
   
   lfc.hc <- hclust(dist(lfcTab.mat, method="euclidean"))
   lfcTabHmap <- Heatmap(lfcTab.mat,
-                           row_names_gp = gpar(fontsize = 7), 
+                           row_names_gp = gpar(fontsize = 6), 
                            cluster_columns = FALSE,
                            column_split = factor(c(rep("Trio", 2), rep("Shank3",2), rep("Glun2A", 2)), levels=c("Trio", "Shank3", "Glun2A")),
                            column_title = NULL,

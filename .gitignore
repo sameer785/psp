@@ -14,7 +14,19 @@
 .Ruserdata
 .xlsx
 .xls
-
+.RDataTmp
+data/*
+!data/.gitkeep
+bca/*
+!data/.gitkeep
+westerns/*
+!westerns/.gitkeep
+temp/*
+!temp/.gitkeep
+analysis/*
+!analysis/.gitkeep
+microscopy/*
+!microscopy/.gitkeep
 # Packages #
 ############
 # it's better to unpack these files and commit the raw source

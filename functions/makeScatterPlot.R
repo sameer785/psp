@@ -2,8 +2,8 @@ makeScatterPlot <- function(dat, lab){
   axisLabSize = 18
   legendLabSize = 18
   axisLineSize = .8
-  xFcLim = 2
-  yFcLim = 2
+  xFcLim = 1.0
+  yFcLim = 1.0
   
   th <- theme(
       # axis text
@@ -46,6 +46,6 @@ makeScatterPlot <- function(dat, lab){
   gp <- gp + scale_shape_manual(values = c(16, 21, 21, 23), labels=lab)
   gp <- gp + scale_x_continuous(breaks = scales::pretty_breaks(n = 10))
   gp <- gp + scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
-  gp <- gp + theme(legend.position = c(0.75,0.15))
+  gp <- gp + theme(legend.position = c(0.8,0.1))
   return(gp)
 }

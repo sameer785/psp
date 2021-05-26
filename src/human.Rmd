@@ -1,0 +1,403 @@
+---
+title: "Human PSD proteome analysis"
+output:
+html_document: default
+html_notebook: default
+pdf_document: default
+---
+  
+Sameer Aryal 
+Postdoctoral Associate
+Sheng Laboratory
+Broad Institute of MIT and Harvard
+April 1, 2021
+
+How is the PSD proteome altered in patients with schizophrenia or bipolar disorder compared to matched controls?
+
+
+```{r, message=FALSE}
+rm(list=ls())
+require(readxl)
+require(tidyverse)
+require(tm)
+require(ggfortify)
+require(reshape2)
+require(ggbeeswarm)
+require(EnhancedVolcano)
+require(RColorBrewer)
+require(fgsea)
+require(ComplexHeatmap)
+```
+Loading data and helper functions. 
+
+```{r}
+files.sources = list.files("../functions" , full.names = TRUE)
+invisible(lapply(files.sources, source))
+human.xls <- read_xlsx("../data/Human-PSD-Groups-Ordered_Two-sample_mod_T_2021-03-23.xlsx")
+human.xls <- human.xls %>% drop_na(logFC.X03B.over.X01A)
+human.xls <- human.xls %>% drop_na(logFC.X03B.over.X02C)
+dim(human.xls)
+
+human.meta <- read_xlsx("../data/Human_PSD_Metadata.xlsx")
+```
+Does the data have any underlying structure?
+```{r}
+human.abundances <- human.xls %>% dplyr::select(ends_with("Pooled.Ref"))
+
+#Renaming columns for clarity
+human.sampleSheet <- makeSampleSheetHuman(human.abundances)
+colnames(human.abundances) <- human.sampleSheet$cleanId
+
+human.abundances.clean <- na.omit(human.abundances)
+dim(human.abundances.clean)
+human.abundances.pca.plot <- makePcaPlot(human.abundances.clean, as.factor(human.sampleSheet$color))
+human.abundances.pca.plot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/human/pca_1_v_2.pdf", width = 8, height = 6, units = "in")
+```
+
+```{r}
+human.grin2a.abundance.m <- getAbundanceOfProteinHuman(human.xls, 
+                                               'Q12879',
+                                               "Pooled.Ref", 
+                                               human.sampleSheet) # #'Q12879',
+human.grin2a.abundance.plot <- makeAbundancePlot(human.grin2a.abundance.m)
+human.grin2a.abundance.plot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/human/proteinExpression_Glun2a.pdf", width = 8, height = 6, units = "in")
+```
+
+```{r}
+plot(hist(human.xls$adj.P.Val.X03B.over.X01A, breaks=100), xlim=c(0,1))
+plot(hist(human.xls$adj.P.Val.X03B.over.X02C, breaks=100), xlim=c(0,1))
+```
+
+```{r}
+sum(human.xls$adj.P.Val.X03B.over.X01A < 0.1)
+sum(human.xls$adj.P.Val.X03B.over.X02C < 0.1)
+```
+SCZ over CTRL
+
+```{r}
+# C over B : SCZ over CTRL
+human.xls <- human.xls %>% dplyr::mutate(logFC.SCZ.over.CTRL = logFC.X03B.over.X02C*(-1))
+vPlot <- makeVolcanoPlot(human.xls, "logFC.SCZ.over.CTRL", "adj.P.Val.X03B.over.X02C")
+vPlot <- vPlot + scale_x_continuous(limits = c(-3,3))
+vPlot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/human/volcano_SCZ_over_CTRL.pdf", width = 12, height = 8, units = "in")
+```
+
+
+```{r}
+#Stratify by CDS length
+geneLengths <- read.csv("~/Google Drive/geneSets/geneLengths/S3.genes.results", sep="\t", header=T)
+bm<-read_csv("~/Google Drive/geneSets/geneNames/ensemblId_mouseGeneName_humanGeneName.csv")
+res <- inner_join(geneLengths, bm, by=c("gene_id"="external_gene_name"))
+resLen <- inner_join(human.xls, res, by=c("geneSymbol"="hsapiens_homolog_associated_gene_name"))
+resLen$aaSize <- resLen$length/3
+resLen$logAAsize <- log2(resLen$aaSize)
+##### CDS length distribution is shifted left in the PSD compared to tissue RF. Why??
+resLen <- setupBins(resLen, "logAAsize", c(0,6.5,7.5,9,10.5,12,16))
+keyvals <- colorizeBins(resLen)
+vPlot4 <- makeVolcanoPlot(resLen, "logFC.SCZ.over.CTRL", "adj.P.Val.X03B.over.X02C", NULL, 0.8, keyvals, c(0.5,0.9))
+vPlot4 <- vPlot4 + coord_cartesian(xlim = c(-3,3), ylim=c(0,-log10(10e-5)))
+vPlot4
+ggsave(filename = "~/Google Drive/psp/analysis/plots/human/SCZ_over_CTRL_volcano_CDS_length.pdf", width = 12, height = 8, units = "in")
+```
+
+```{r}
+# Lfcbins has changed now. Stratifying LFC cum freq w/ CDS length bins. 
+resLen$logFC.KO.over.WT <- resLen$logFC.SCZ.over.CTRL
+lfcCumFreqPlot <- makeStratifiedCumLfcPlot(resLen)
+lfcCumFreqPlot <- lfcCumFreqPlot + coord_cartesian(xlim = c(-2,2))
+lfcCumFreqPlot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/human/SCZ_over_CTRL_lfcCumFreq_log_CDS_len.pdf", width = 12, height = 8, units = "in")
+```
+
+```{r}
+human.xls <- human.xls %>% mutate(t.X03C.over.X02B = t.X03B.over.X02C*(-1))
+goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
+tst.koOverWt.scz <- 't.X03C.over.X02B'
+human.scz.go <- doGoAnalysisHuman(human.xls, goPathways, tst.koOverWt.scz)
+human.scz.go.up <- human.scz.go %>% filter(NES > 0) %>% arrange(padj)
+human.scz.go.down <- human.scz.go %>% filter(NES < 0) %>% arrange(NES, padj)
+```
+
+BP over CTRL
+
+```{r}
+# C over B : BP over CTRL
+human.xls <- human.xls %>% dplyr::mutate(logFC.BP.over.CTRL = logFC.X03B.over.X01A*(-1))
+vPlot <- makeVolcanoPlot(human.xls, "logFC.BP.over.CTRL", "adj.P.Val.X03B.over.X01A")
+vPlot <- vPlot + scale_x_continuous(limits = c(-3,3))
+vPlot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/human/volcano_BP_over_CTRL_PADJ_10e_3.pdf", width = 12, height = 8, units = "in")
+```
+
+
+
+```{r}
+vPlot4 <- makeVolcanoPlot(resLen, "logFC.BP.over.CTRL", "adj.P.Val.X03B.over.X01A", NULL, 0.8, keyvals, c(0.5,0.9))
+vPlot4 <- vPlot4 + coord_cartesian(xlim = c(-3,3), ylim=c(0,-log10(10e-5)))
+vPlot4
+ggsave(filename = "~/Google Drive/psp/analysis/plots/human/BP_over_CTRL_volcano_CDS_length.pdf", width = 12, height = 8, units = "in")
+```
+
+```{r}
+# Lfcbins has changed now. Stratifying LFC cum freq w/ CDS length bins. 
+resLen$logFC.KO.over.WT <- resLen$logFC.BP.over.CTRL
+lfcCumFreqPlot <- makeStratifiedCumLfcPlot(resLen)
+lfcCumFreqPlot <- lfcCumFreqPlot + coord_cartesian(xlim = c(-2,2))
+lfcCumFreqPlot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/human/BP_over_CTRL_lfcCumFreq_log_CDS_len.pdf", width = 12, height = 8, units = "in")
+```
+
+```{r}
+human.xls <- human.xls %>% mutate(t.X03A.over.X01B = t.X03B.over.X01A*(-1))
+goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
+tst.koOverWt.bp <- 't.X03A.over.X01B'
+human.bp.go <- doGoAnalysisHuman(human.xls, goPathways, tst.koOverWt.bp)
+human.bp.go.up <- human.bp.go %>% filter(NES > 0) %>% arrange(padj)
+human.bp.go.down <- human.bp.go %>% filter(NES < 0) %>% arrange(NES, padj)
+```
+```{r}
+makeGoHeatmap <- function(sig.nes){
+  sig.nes <- as.data.frame(sig.nes)
+  rownames(sig.nes) <- substring(sig.nes$pathway,4)
+  sig.nes <- sig.nes[,c(-1)]
+  library(circlize)
+  col_fun = colorRamp2(c(-3, 0, 3), c("blue", "white", "red"))
+  col_fun(seq(-3, 3))
+  sig.nes.hmap <- Heatmap(sig.nes, row_names_gp = gpar(fontsize = 6), col=col_fun, heatmap_legend_param = list(title=NULL))
+  return (sig.nes.hmap)
+}
+```
+
+
+```{r}
+human.all.go <- inner_join(human.scz.go, human.bp.go, by="pathway", suffix=c(".scz", ".bp"))
+padjVal <- 10e-8
+human.all.go.sig.nes <- human.all.go %>% filter(padj.scz < padjVal | padj.bp < padjVal) %>% select(pathway, NES.scz, NES.bp)
+human.all.go.sig.hmap <- makeGoHeatmap(human.all.go.sig.nes)
+pdf(file = "~/Google Drive/psp/analysis/plots/human/SCZ_BP_GO_heatmap_anySigGo_nes_PADJ_E_5.pdf", width = 5,  height = 15)
+human.all.go.sig.hmap
+dev.off()
+
+human.all.go <- inner_join(human.scz.go, human.bp.go, by="pathway", suffix=c(".scz", ".bp"))
+padjVal <- 10e-5
+human.all.go.sig.nes.all <- human.all.go %>% filter(padj.scz < padjVal & padj.bp < padjVal) %>% select(pathway, NES.scz, NES.bp)
+human.all.go.sig.hmap.all <- makeGoHeatmap(human.all.go.sig.nes.all)
+pdf(file = "~/Google Drive/psp/analysis/plots/human/SCZ_BP_GO_heatmap_allSigGo_nes_PADJ_E_5.pdf", width = 4,  height = 12)
+human.all.go.sig.hmap.all
+dev.off()
+```
+```{r}
+pathways.go <- gmtPathways("~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt")
+RNA_SPLICING <- pathways.go$GO_RNA_SPLICING
+CYTOSOLIC_RIBOSOME <- pathways.go$GO_CYTOSOLIC_RIBOSOME
+NADH_DEHYDROGENASE_ACTIVITY <- pathways.go$GO_NADH_DEHYDROGENASE_ACTIVITY
+VESICLE_TETHERING_COMPLEX <- pathways.go$GO_VESICLE_TETHERING_COMPLEX
+REGULATION_OF_GTPASE_ACTIVITY <- pathways.go$GO_REGULATION_OF_GTPASE_ACTIVITY
+```
+
+```{r}
+pVal <- 0.1
+human.xls <- human.xls %>% drop_na(logFC.X02C.over.X01A, logFC.X03B.over.X01A, logFC.X03B.over.X02C)
+human.xls <- human.xls %>% mutate(logFC.SCZ.over.CTRL = logFC.X03B.over.X02C *(-1))
+human.xls <- human.xls %>% mutate(logFC.BP.over.CTRL = logFC.X03B.over.X01A *(-1))
+human.xls <- human.xls %>% mutate(t.SCZ.over.CTRL = t.X03B.over.X02C *(-1))
+human.xls <- human.xls %>% mutate(t.BP.over.CTRL = t.X03B.over.X01A *(-1))
+human.xls <- human.xls %>% mutate(splicing = ifelse(geneSymbol %in% RNA_SPLICING, 1, 0))
+human.xls <- human.xls %>% mutate(cytosolicRibosome = ifelse(geneSymbol %in% CYTOSOLIC_RIBOSOME, 2, 0))
+human.xls <- human.xls %>% mutate(rna.ribo = splicing + cytosolicRibosome)
+human.xls <- human.xls %>% mutate(scz.sig = ifelse(adj.P.Val.X03B.over.X02C < pVal, 1, 0))
+human.xls <- human.xls %>% mutate(bp.sig = ifelse(adj.P.Val.X03B.over.X01A < pVal, 2, 0))
+human.xls <- human.xls %>% mutate(both.sig = as.factor(scz.sig + bp.sig))
+
+```
+
+```{r}
+makeHeatMapHuman <- function(bigTab, geneList){
+  currTab <- bigTab %>% 
+      filter(geneSymbol %in% geneList) %>%
+      select(geneSymbol, ends_with("Pooled.Ref"))
+    
+  colnames(currTab) <- c('geneSymbol', human.sampleSheet$cleanId)
+  currTab <- na.omit(currTab)
+  currTab.tmp <- distinct(currTab, geneSymbol, .keep_all = TRUE)
+  currTab.mat <- as.data.frame(currTab.tmp %>% select(-c("geneSymbol")))
+  rNames <- currTab.tmp %>% select("geneSymbol")
+  rownames(currTab.mat) <- rNames$geneSymbol
+  col_fun = colorRamp2(c(-1.5, 0, 1.5), c("blue", "white", "red"))
+  col_fun(seq(-3, 3))
+  
+  hMapLev <- paste(c("CTRL", "BP", "SCZ"))
+
+  
+  currTabHmap <- Heatmap(currTab.mat, 
+                        row_names_gp = gpar(fontsize = 7), 
+                        cluster_columns = TRUE,
+                        column_split = factor(c(rep("BP", 35), rep("CTRL",35), rep("SCZ", 35)), levels=c("CTRL", "BP", "SCZ")),
+                        column_title = NULL,
+                        col=col_fun,
+                        heatmap_legend_param = list(title = NULL)
+  )
+  
+
+  lfcTab <- bigTab %>% filter(geneSymbol %in% geneList) %>% select(geneSymbol,
+                              logFC.SCZ.over.CTRL, 
+                              logFC.BP.over.CTRL)
+  
+  colnames(lfcTab) <- c("geneSymbol", "SCZ/CTRL", "BP/CTRL")
+  lfcTab <- na.omit(lfcTab)
+  lfcTab.tmp <- distinct(lfcTab, geneSymbol, .keep_all = TRUE)
+  lfcTab.mat <- as.data.frame(lfcTab.tmp %>% select(-c("geneSymbol")))
+  rNames <- lfcTab.tmp %>% select("geneSymbol")
+  rownames(lfcTab.mat) <- rNames$geneSymbol
+  
+  lfcTabHmap <- Heatmap(lfcTab.mat,
+                           row_names_gp = gpar(fontsize = 4), 
+                           cluster_columns = FALSE,
+                           column_split = factor(c("SCZ", "BP"), levels=c("SCZ", "BP")),
+                           column_title = NULL,
+                           col = col_fun,
+                           heatmap_legend_param = list(title = NULL)
+  )
+  
+   return (c(currTabHmap, lfcTabHmap))
+}
+```
+
+
+```{r}
+saveHeatMaps <- function(xlsFile, goTerm, goName){
+  while (!is.null(dev.list()))  dev.off()
+  
+  hMaps.goTerm <- makeHeatMapHuman(xlsFile, goTerm)
+  prefix <- "~/Google Drive/psp/analysis/plots/human/heatmap_"
+  suffixRaw <- "_Raw.pdf"
+
+  pdf(file = paste(prefix, goName, suffixRaw, sep=""),   
+      width = 9, # The width of the plot in inches
+      height = 12) # The height of the plot in inches
+  print(hMaps.goTerm[[1]])
+  while (!is.null(dev.list()))  dev.off()
+  
+    
+  suffixAv <- "_LFC.pdf"
+  pdf(file = paste(prefix, goName, suffixAv, sep=""),   
+      width = 6, # The width of the plot in inches
+      height = 12) # The height of the plot in inches
+  print(hMaps.goTerm[[2]])
+  while (!is.null(dev.list()))  dev.off()
+  
+}
+```
+
+```{r}
+saveHeatMaps(human.xls, VESICLE_TETHERING_COMPLEX, "vesicle_tethering_complex")
+saveHeatMaps(human.xls, RNA_SPLICING, "splicing")
+saveHeatMaps(human.xls, CYTOSOLIC_RIBOSOME, "cytosolic_ribosome")
+saveHeatMaps(human.xls, NADH_DEHYDROGENASE_ACTIVITY, "nadh_dehydrogenase_activity")
+saveHeatMaps(human.xls, REGULATION_OF_GTPASE_ACTIVITY, "regulation_of_gtpase_activity")
+saveHeatMaps(human.xls, pathways.go$GO_MACROAUTOPHAGY, "macroautophagy")
+saveHeatMaps(human.xls, pathways.go$GO_GLUTAMATE_RECEPTOR_SIGNALING_PATHWAY, "glutamate_receptor_signaling")
+saveHeatMaps(human.xls, pathways.go$GO_REGULATION_OF_POSTSYNAPTIC_MEMBRANE_POTENTIAL, "regulation_of_postsynaptic_membrane_potential")
+saveHeatMaps(human.xls, pathways.go$GO_VOLTAGE_GATED_ION_CHANNEL_ACTIVITY, "voltage_gated_ion_channel")
+saveHeatMaps(human.xls, pathways.go$GO_POSTSYNAPTIC_MEMBRANE, "postsynaptic_membrane")
+```
+```{r}
+curDat <- human.xls %>% select(geneSymbol, 
+                             logFC.SCZ.over.CTRL, 
+                             logFC.BP.over.CTRL,
+                             scz.sig, bp.sig, both.sig)
+curDat <-  curDat %>% mutate(x=logFC.SCZ.over.CTRL, y=logFC.BP.over.CTRL, color=both.sig)
+fcCutOff <- 1.5
+nSiz <- 4
+lab  <- c("NS", "Sig. SCZ", "Sig. BP", "Sig. Both")
+scPlot <- makeScatterPlot(curDat, lab)
+scPlot <- scPlot + xlab("Log2-fold change (SCZ/CTRL)") + ylab("Log2-fold change (BP/CTRL)")
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==3 & (x > fcCutOff | x < 0 | y > fcCutOff | y < 0) | ((color==1 | color==2) & (x< -1.5 | x>1.5 | y< -1.5 | y>1.5)) | geneSymbol=="APOE"),
+                                                      as.character(geneSymbol), '')), 
+                                                      show.legend = FALSE, 
+                                                      segment.color='black',
+                                                      segment.size = .5, 
+                                                      segment.alpha = .25, 
+                                                      size=nSiz, 
+                                                      colour="black")
+# scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 | color==2) & (x< -1.5 | x>1.5 | y< -1.5 | y>1.5)), as.character(geneSymbol), '')),
+#                                        show.legend = FALSE,
+#                                        segment.color='black',
+#                                        segment.size = .5,
+#                                        segment.alpha = .25)
+
+scPlot <- scPlot + coord_cartesian(ylim=c(-3,3), xlim=c(-3,3))
+scPlot
+ggsave(plot = scPlot, "~/Google Drive/psp/analysis/plots/human/lfcScatter_SCZ_v_BP.pdf", width = 9, height = 9, units = "in")
+
+curDat <- human.xls %>% select(geneSymbol, 
+                             logFC.SCZ.over.CTRL, 
+                             logFC.BP.over.CTRL,
+                             rna.ribo)
+curDat <-  curDat %>% mutate(x=logFC.SCZ.over.CTRL, y=logFC.BP.over.CTRL, color=rna.ribo)
+scPlot <- makeScatterPlot(curDat, lab <- c("","RNA splicing", "Cytosolic ribosome","Both"))
+scPlot <- scPlot + xlab("Log2-fold change (SCZ/CTRL)") + ylab("Log2-fold change (BP/CTRL)")
+nudge <- 1
+nSiz <- 4
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==1 | color==2) & x > 0.75 & y>0.75, as.character(geneSymbol), '')), 
+                                   show.legend = FALSE, 
+                                   segment.color='black', 
+                                   segment.size = .5, 
+                                   segment.alpha = .25, 
+                                   size=nSiz,
+                                   max.overlaps = 15,
+                                    nudge_x      = nudge,
+                                     direction    = "y",
+                                     hjust        = 1
+                                   )
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 | color==2) & x < -0.75 & y < -0.75) | (geneSymbol %in% c("SFPQ", "PSPC1", "NONO", "TARDBP", "FUS")), as.character(geneSymbol), '')), 
+                                   show.legend = FALSE, 
+                                   segment.color='black', 
+                                   segment.size = .5, 
+                                   segment.alpha = .25, 
+                                   size=nSiz,
+                                   max.overlaps = 10,
+                                    nudge_x      = -nudge,
+                                     direction    = "y",
+                                     hjust        = 1
+                                   )
+
+scPlot <- scPlot + coord_cartesian(ylim=c(-3,3), xlim=c(-3,3))
+scPlot
+ggsave(plot = scPlot, "~/Google Drive/psp/analysis/plots/human/lfcScatter_SCZ_v_BP_Splicing_Ribosome.pdf", width = 9, height = 9, units = "in")
+```
+
+
+```{r}
+trio.xls <- read_xlsx("../data/results_PSD-Trio-proteome_Two-sample_mod_T_2020-07-24.xlsx")
+shank3.xls <- read_xlsx("../data/results_PSD-Shank3-proteome_Two-sample_mod_T_2020-07-22.xlsx")
+grin2a.xls <- read_xlsx("../data/results_Glun2a-TMT16-Proteome_Two-sample_mod_T_2020-11-30.xlsx")
+```
+
+```{r}
+
+
+setVars<-function(dat.xls){
+  dat.xls <- dat.xls %>% drop_na(logFC.WT.over.KO, logFC.WT.over.Het, logFC.KO.over.Het)
+  dat.xls <- dat.xls %>% mutate(logFC.KO.over.WT = logFC.WT.over.KO*(-1))
+  dat.xls <- dat.xls %>% mutate(logFC.Het.over.WT = logFC.WT.over.Het*(-1))
+  dat.xls <- dat.xls %>% mutate(t.KO.over.WT = t.WT.over.KO*(-1))
+  dat.xls <- dat.xls %>% mutate(t.Het.over.WT = t.WT.over.Het*(-1))
+  dat.xls <- dat.xls %>% mutate(RNA_SPLICING = ifelse(geneSymbol %in% RNA_SPLICING, 1, 0))
+  dat.xls <- dat.xls %>% mutate(CYTOSOLIC_RIBOSOME = ifelse(geneSymbol %in% CYTOSOLIC_RIBOSOME, 1, 0))
+}
+trio.xls <- setVars(trio.xls)
+shank3.xls <- setVars(shank3.xls)
+grin2a.xls <- setVars(grin2a.xls)
+```
+
+
+
+```{r}
+trio.shank3.xls <- full_join(trio.xls, shank3.xls, suffix=c(".trio", ".grin2a"))
+grin2a.human.xls <- full_join(grin2a.xls, human.xls, suffix=c(".grin2a", ".human"))
+```
+

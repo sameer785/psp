@@ -41,8 +41,83 @@ tau <- tau %>% dplyr::mutate(P.Value.WT.over.KO = `Adjusted p-value`)
 
 tb <- tau %>% select(geneSymbol, logFC.KO.over.WT, P.Value.WT.over.KO)
 vPlot <- makeVolcanoPlot(tb)
-vPlot <- vPlot + scale_y_continuous(trans='log10')
+vPlot <- vPlot + scale_x_continuous(limits=c(-3,3), breaks = scales::pretty_breaks(n=10))
+ggsave(plot=vPlot, filename = "~/Google Drive/psp/analysis/plots/tauTg/volcano_linear_scale_y_axis.pdf", width = 12, height = 12, units="in")
+
+
+vPlot <- vPlot + scale_y_continuous(trans='log10', labels = scales::trans_format("log10", scales::math_format(10^.x)))  #labels = scales::comma_format()
+
 vPlot
+ggsave(plot=vPlot, filename = "~/Google Drive/psp/analysis/plots/tauTg/volcano_log_scale_y_axis.pdf", width = 12, height = 12, units="in")
+```
+
+```{r}
+modifyTauPlot <- function(tauPlot){
+  tauPlot <- tauPlot + scale_x_continuous(limits=c(-3,3), breaks = scales::pretty_breaks(n=10))
+  tauPlot <- tauPlot + scale_y_continuous(trans='log10', labels = scales::trans_format("log10", scales::math_format(10^.x))) 
+  tauPlot <- tauPlot + geom_text_repel(aes(label=ifelse((labelTrue), as.character(geneSymbol), '')), 
+                                       show.legend = FALSE, 
+                                       segment.color='black', 
+                                       size = 5, 
+                                       segment.size = 0.5,
+                                       segment.alpha = 0.5,
+                                       min.segment.length = 0,
+                                       box.padding = 2,
+                                       max.overlaps = Inf
+)
+  tauPlot <- tauPlot + ylab("-Log10 adjusted P-Value")
+  tauPlot <- tauPlot + xlab("Log2 fold change")
+  return (tauPlot)
+}
+```
+
+```{r}
+tau <- tau %>% mutate(x=logFC.KO.over.WT, y=padj)
+tau <- tau %>% mutate(smallSig=ifelse(P.Value.WT.over.KO < 0.1, 1, 0))
+tau <- tau %>% mutate(bigSig=ifelse(P.Value.WT.over.KO < 0.1 & (x < -1.0 | x > 1.0), 2, 0))
+tau <- tau %>% mutate(color = factor(bigSig + smallSig))
+tau <- tau %>% mutate(labelTrue = ifelse(color==3, 1, 0))
+sa <- makeVolcanoScatter(tau, c("NS", "Little sig", "Sig"))
+sa <- modifyTauPlot(sa)
+ggsave(plot=sa, filename = "~/Google Drive/psp/analysis/plots/tauTg/volcano_log_scale_y_axis_p_0.1.pdf", width = 12, height = 12, units="in")
+
+
+tau <- tau %>% mutate(SZ.f.t = ifelse(is.na(SZ.f), 0, 1))
+tau <- tau %>% mutate(ASD.f.t = ifelse(is.na(ASD.f), 0, 1))
+tau <- tau %>% mutate(SZ.g.t = ifelse(is.na(SZ.g), 0, 1))
+tau <- tau %>% mutate(ASD.g.t = ifelse(is.na(ASD.g), 0, 1))
+tau <- tau %>% mutate(AD.f.t = ifelse(is.na(AD.f), 0, 1))
+tau <- tau %>% mutate(AD.g.t = ifelse(is.na(AD.g), 0, 1))
+tau <- tau %>% mutate(scz = ifelse((SZ.f.t==TRUE | SZ.g.t==TRUE), 1, 0))
+tau <- tau %>% mutate(asd = ifelse((ASD.f.t==TRUE | ASD.g.t==TRUE), 2, 0))
+tau <- tau %>% mutate(ad = ifelse((AD.f.t==TRUE | AD.g.t==TRUE), 1, 0))
+tau <- tau %>% mutate(asdscz = ifelse((SZ.f.t==TRUE | SZ.g.t==TRUE | ASD.f.t==TRUE | ASD.g.t==TRUE), 1, 0))
+#tau <- tau %>% mutate(color=factor(scz+asd))
+tau <- tau %>% mutate(color=asdscz)
+#tau <- tau %>% mutate(labelTrue = ifelse(color==1, 1, 0))
+
+labelList <- c("Syngap1", "Lrrc7", "Iqgap2", "Grin2a", "Cacna2d1", "L1cam", "Shank3", "Trio", "Cacna2d1")
+tau <- tau %>% mutate(labelTrue = ifelse(geneSymbol %in% labelList, 1, 0))
+
+#tau <- tau %>% mutate(color=factor(ad))
+#tau <- tau %>% mutate(labelTrue = ifelse(ad==1, 1, 0))
+#labelList <- c("Ctnna2", "Rimbp2", "Cntn1", "Clu", "App")
+#tau <- tau %>% mutate(labelTrue = ifelse(geneSymbol %in% labelList, 1, 0))
+
+sb <- makeVolcanoScatter(tau, c("", "ASD/SCZ")) #c("", "AD")
+sb <- modifyTauPlot(sb)
+sb <- sb + theme(legend.position = c(.9,.15))
+sb
+ggsave(plot=sb, filename = "~/Google Drive/psp/analysis/plots/tauTg/volcano_scz_asd_genes_highlighted_NO_DISTINCTION_BETWEEN_ASD_SCZ.pdf", width = 9, height = 9, units="in")
+
+# tau <- tau %>% mutate(AD.f.t = ifelse(is.na(AD.f), 0, 1))
+# tau <- tau %>% mutate(AD.g.t = ifelse(is.na(AD.g), 0, 1))
+# tau <- tau %>% mutate(color = ifelse((AD.f.t==TRUE | AD.g.t==TRUE), 1, 0))
+# sb <- makeVolcanoScatter(tau, c("", "AD"))
+# sb <- modifyTauPlot(sb)
+# sb <- sb + theme(legend.position = c(.95,.95))
+# sb
+# ggsave(plot=sb, filename = "~/Google Drive/psp/analysis/plots/tauTg/volcano_scz_asd_genes_highlighted.pdf", width = 12, height = 12, units="in")
 ```
 
 ```{r}
@@ -129,7 +204,7 @@ head(curDat)
 
 
 plotWidth <- 12
-plotHeight <- 8
+
 lab  <- c("NS", "Sig. Trio", "Sig. Tau-tg", "Sig. Both")
 scPlot <- makeScatterPlot(curDat, lab)
 scPlot <- scPlot + xlab("Log2-fold change (Trio KO/WT)") + ylab("Log2-fold change (Tau-tg/WT)")
@@ -209,13 +284,12 @@ cplmnt <- str_to_title(pathways.go$GO_COMPLEMENT_ACTIVATION)
 glutSyn <- str_to_title(pathways.go$GO_GLUTAMATERGIC_SYNAPSE)
 vgc <- str_to_title(pathways.go$GO_VOLTAGE_GATED_ION_CHANNEL_ACTIVITY)
 
-
 setTauVars <- function(dat.xls){
   dat.xls <- dat.xls %>% dplyr::mutate(logFC.KO.over.WT = logFC.WT.over.KO*(-1))
   tau <- tau %>% mutate(id=`Accession Number`)
   joint.tau <- inner_join(dat.xls, tau, by='id')
   joint.tau <- joint.tau %>% mutate(dat.sig = ifelse(P.Value.WT.over.KO < pVal, 1, 0))
-  joint.tau <- joint.tau %>% mutate(tau.sig = ifelse(`Adjusted p-value`<pVal, 4, 0))
+  joint.tau <- joint.tau %>% mutate(tau.sig = ifelse(`Adjusted p-value`< pVal, 4, 0))
   joint.tau <- joint.tau %>% mutate(all.sig = as.factor(dat.sig + tau.sig))
   joint.tau <- joint.tau %>% mutate(splicing = ifelse(geneSymbol %in% rnaSplicing, 1, 0))
   joint.tau <- joint.tau %>% mutate(cytosolicRibosome = ifelse(geneSymbol %in% cytosolicRibosome, 2, 0))
@@ -227,36 +301,124 @@ setTauVars <- function(dat.xls){
 
   return (joint.tau)
 }
+```
 
+```{r}
 makePlot <- function(dat, gen){
   curDat <- setTauVars(dat)
   curDat <- curDat %>% mutate(x=logFC.KO.over.WT, y=lfc)
   curDat <- curDat %>% mutate(color=all.sig)
-  currGen <- paste("Sig", gen, "KO")
+  currGen <- paste("Sig.", gen, "KO")
   lab  <- c("NS", currGen, "Sig. Tau-tg", "Sig. Both")
   scPlot <- makeScatterPlot(curDat, lab)
   currLab <- paste("Log2-fold change (", gen, " KO/WT)", sep="")
   scPlot <- scPlot + xlab(currLab) + ylab("Log2-fold change (Tau-tg/WT)")
-  scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==5), as.character(geneSymbol), '')), show.legend = FALSE)
-  scPlot <- scPlot + coord_cartesian(xlim = c(-5,5))
+  scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==5 & x < 0), as.character(geneSymbol), '')), 
+                                     show.legend = FALSE,
+                                     force        = 0.5,
+                                     nudge_x      = -1.25,
+                                     direction    = "y",
+                                     hjust        = 1,
+                                     segment.size = 0.2,
+                                     segment.alpha = 0.25,
+                                     segment.curvature = -1e-20,
+                                     segment.ncp = 50,
+                                     segment.angle = 20,
+                                     segment.square  = TRUE,
+                                     segment.inflect = TRUE,
+                                     #arrow = arrow(length = unit(0.015, "npc")),
+                                     #segment.linetype = 1,
+                                     xlim  = c(NA,-3),
+                                     )
+  
+   scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==5 & x > 0), as.character(geneSymbol), '')), 
+                                     show.legend = FALSE,
+                                     force        = 0.5,
+                                     nudge_x      = 1.25,
+                                     direction    = "y",
+                                     hjust        = 1,
+                                     segment.size = 0.2,
+                                     segment.alpha = 0.25,
+                                     segment.curvature = -1e-20,
+                                     segment.ncp = 50,
+                                     segment.angle = 20,
+                                     segment.square  = TRUE,
+                                     segment.inflect = TRUE,
+                                     #arrow = arrow(length = unit(0.015, "npc")),
+                                     #segment.linetype = 1,
+                                     xlim  = c(2, NA),
+                                     )
+                                     
+  scPlot <- scPlot + coord_cartesian(xlim = c(-5,5), ylim = c(-2.5,2.5))
+
   return(scPlot)
 }
 
 
 
 
-p <- makePlot(trio.xls, "Trio")
-ggsave("~/Google Drive/psp/analysis/plots/trio/trio_ko_vs_tauTg_lfcScatterP1.pdf", width = plotWidth, height = plotHeight, units = "in")
-
-p <- makePlot(shank3.xls, "Shank3")
-ggsave("~/Google Drive/psp/analysis/plots/shank3/shank3_ko_vs_tauTg_lfcScatterP1.pdf", width = plotWidth, height = plotHeight, units = "in")
+# p <- makePlot(trio.xls, "Trio")
+# ggsave("~/Google Drive/psp/analysis/plots/trio/trio_ko_vs_tauTg_lfcScatterP1.pdf", width = plotWidth, height = plotHeight, units = "in")
+# 
+# p <- makePlot(shank3.xls, "Shank3")
+# ggsave("~/Google Drive/psp/analysis/plots/shank3/shank3_ko_vs_tauTg_lfcScatterP1.pdf", width = plotWidth, height = plotHeight, units = "in")
 
 p <- makePlot(grin2a.xls, "Grin2a")
-ggsave("~/Google Drive/psp/analysis/plots/grin2a/grin2a_ko_vs_tauTg_lfcScatterP1.pdf", width = plotWidth, height = plotHeight, units = "in")
-
-
-
+ggsave("~/Google Drive/psp/analysis/plots/tauTg/grin2a_ko_vs_tauTg_lfcScatterP1.pdf", width = 9, height = 9, units = "in")
 ```
+
+```{r}
+makePlot <- function(dat, gen){
+  curDat <- setTauVars(dat)
+  curDat <- curDat %>% mutate(x=logFC.KO.over.WT, y=lfc)
+  curDat <- curDat %>% mutate(color=all.sig)
+  currGen <- paste("Sig.", gen, "KO")
+  lab  <- c("NS", currGen, "Sig. Tau-tg", "Sig. Both")
+  scPlot <- makeScatterPlot(curDat, lab)
+  currLab <- paste("Log2-fold change (", gen, " KO/WT)", sep="")
+  scPlot <- scPlot + xlab(currLab) + ylab("Log2-fold change (Tau-tg/WT)")
+  scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==5 & x < 0), as.character(geneSymbol), '')), 
+                                     show.legend = FALSE,
+                                     force        = 0.5,
+                                     nudge_x      = -1.5,
+                                     direction    = "y",
+                                     hjust        = 1,
+                                     segment.size = 0.2,
+                                     segment.alpha = 0.75,
+                                     max.overlaps = 15
+                                     )
+  
+   scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==5 & x > 0), as.character(geneSymbol), '')), 
+                                     show.legend = FALSE,
+                                     force        = 0.5,
+                                     nudge_x      = 1.5,
+                                     direction    = "y",
+                                     hjust        = 1,
+                                     segment.size = 0.2,
+                                     segment.alpha = 0.75,
+                                     max.overlaps = Inf
+                                     )
+                                     
+  scPlot <- scPlot + coord_cartesian(xlim = c(-5,5), ylim = c(-5,5))
+  return(scPlot)
+}
+
+
+
+
+# p <- makePlot(trio.xls, "Trio")
+# ggsave("~/Google Drive/psp/analysis/plots/trio/trio_ko_vs_tauTg_lfcScatterP1.pdf", width = plotWidth, height = plotHeight, units = "in")
+# 
+# p <- makePlot(shank3.xls, "Shank3")
+# ggsave("~/Google Drive/psp/analysis/plots/shank3/shank3_ko_vs_tauTg_lfcScatterP1.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+p <- makePlot(grin2a.xls, "Grin2a")
+p <- p + ggplot2::annotate("text", x=-4, y=4.5, label = "Pearson's r = 0.240", size=6)
+ggsave("~/Google Drive/psp/analysis/plots/tauTg/grin2a_ko_vs_tauTg_lfcScatterP1_2_MORE_SQUARE.pdf", width = 9, height = 9, units = "in")
+```
+```
+
+
 ```{r}
 makePlot <- function(dat, gen){
   curDat <- setTauVars(dat)
@@ -337,5 +499,4 @@ ggsave("~/Google Drive/psp/analysis/plots/shank3/shank3_ko_vs_tauTg_voltage_gate
 p <- makePlot(grin2a.xls, "Grin2a")
 ggsave("~/Google Drive/psp/analysis/plots/grin2a/grin2a_ko_vs_tauTg_voltage_gated_ion_channel.pdf", width = plotWidth, height = plotHeight, units = "in")
 ```
-
 

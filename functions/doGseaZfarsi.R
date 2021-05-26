@@ -21,21 +21,7 @@ doGseaZfarsi <- function(tbl, pathway){
   fgseaRes.psd <- fgseaRes.psd %>%
     as_tibble() %>%
     arrange(padj, desc(NES))
-  #   #dplyr::select(-ES, -nMoreExtreme) %>%
-  #   DT::datatable()
   
   return (fgseaRes.psd)
-  # 
-  # fgseaRes.psd.down <- fgseaRes.psd %>%
-  #   as_tibble() %>%
-  #   arrange(NES, padj) %>%
-  #   #dplyr::select(-ES, -nMoreExtreme) %>%
-  #   DT::datatable()
-  #     
-  # return(list("up"=fgseaRes.psd.up, "down"=fgseaRes.psd.down))
-  
-  # nTop <- 10
-  # top <- bind_rows(fgseaRes.psd.up[1:nTop,], fgseaRes.psd.down[1:nTop,])
-  # 
-  # return (top)
+ 
 }

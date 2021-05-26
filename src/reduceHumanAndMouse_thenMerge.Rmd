@@ -1,0 +1,277 @@
+
+
+```{r}
+rm(list=ls())
+require(readxl)
+require(tidyverse)
+require(tm)
+require(ggfortify)
+require(reshape2)
+require(ggbeeswarm)
+require(EnhancedVolcano)
+require(RColorBrewer)
+require(fgsea)
+require(ComplexHeatmap)
+require(reshape2)
+files.sources = list.files("../functions" , full.names = TRUE)
+invisible(lapply(files.sources, source))
+```
+
+```{r}
+reduceXlsDat <- function(xlsDat){
+  xls.red1 <- xlsDat %>% group_by(id.query) %>% slice_max(numSpectraProteinObserved, with_ties=FALSE)
+  xls.red2 <- xlsDat %>% arrange(geneSymbol) %>% group_by(geneSymbol) %>% slice_max(numSpectraProteinObserved, with_ties=FALSE)
+  return (xls.red2)
+}
+
+```
+
+
+```{r}
+
+human.xls <- read_xlsx("../data/Human-PSD-Groups-Ordered_Two-sample_mod_T_2021-03-23.xlsx")
+dim(human.xls)
+human.xls.reduced <- reduceXlsDat(human.xls)
+dim(human.xls.reduced)
+trio.xls <- read_xlsx("../data/results_PSD-Trio-proteome_Two-sample_mod_T_2020-07-24.xlsx")
+dim(trio.xls)
+trio.xls.reduced <- reduceXlsDat(trio.xls)
+dim(trio.xls.reduced)
+shank3.xls <- read_xlsx("../data/results_PSD-Shank3-proteome_Two-sample_mod_T_2020-07-22.xlsx")
+dim(shank3.xls)
+shank3.xls.reduced <- reduceXlsDat(shank3.xls)
+dim(shank3.xls.reduced)
+grin2a.xls <- read_xlsx("../data/results_Glun2a-TMT16-Proteome_Two-sample_mod_T_2020-11-30.xlsx")
+dim(grin2a.xls)
+grin2a.xls.reduced <- reduceXlsDat(grin2a.xls)
+dim(grin2a.xls.reduced)
+# all.xls <- full_join(trio.xls, shank3.xls, by="id")
+# all.xls <- full_join(all.xls, grin2a.xls, by="id")
+# all.xls.reduced <- reduceXlsDat(all.xls)
+# dim(all.xls.reduced)
+# 
+# ## the following seems a more reasonable merge
+# all.xls.red2 <- full_join(trio.xls.reduced, shank3.xls.reduced, by="id.query")
+# all.xls.red2 <- full_join(all.xls.red2, grin2a.xls.reduced, by="id.query")
+# dim(all.xls.red2)
+```
+
+Compare LFCs in Grin2a Het or KO with human Scz or Bp LFCs 
+
+```{r}
+source("../functions/interestingGoPathways.R")
+```
+
+```{r}
+setVarsMouse<-function(dat.xls){
+  pVal <- 0.1
+  dat.xls <- dat.xls %>% drop_na(logFC.WT.over.KO, logFC.WT.over.Het, logFC.KO.over.Het)
+  dat.xls <- dat.xls %>% mutate(logFC.KO.over.WT = logFC.WT.over.KO*(-1))
+  dat.xls <- dat.xls %>% mutate(logFC.Het.over.WT = logFC.WT.over.Het*(-1))
+  dat.xls <- dat.xls %>% mutate(t.KO.over.WT = t.WT.over.KO*(-1))
+  dat.xls <- dat.xls %>% mutate(t.Het.over.WT = t.WT.over.Het*(-1))
+  dat.xls <- dat.xls %>% mutate(ko.sig = ifelse(P.Value.WT.over.KO < pVal, 1, 0))
+  dat.xls <- dat.xls %>% mutate(het.sig = ifelse(P.Value.WT.over.Het < pVal, 2, 0))
+  dat.xls <- dat.xls %>% mutate(hetOverWT.sig = ifelse(P.Value.WT.over.Het < pVal, 1, 0))
+  dat.xls <- dat.xls %>% mutate(both.sig = as.factor(ko.sig + het.sig))
+  dat.xls <- dat.xls %>% mutate(koOverHet.sig = ifelse(P.Value.KO.over.Het < pVal, 2, 0))
+  dat.xls <- dat.xls %>% mutate(both.koOverHet.sig = as.factor(hetOverWT.sig + koOverHet.sig))
+  dat.xls <- setGoVars(dat.xls)
+  return (dat.xls)
+}
+
+setVarsHuman<-function(hDat.xls){
+  padjThreshold <- 0.1
+  hDat.xls <- hDat.xls %>% drop_na(logFC.X03B.over.X01A, logFC.X03B.over.X02C, logFC.X02C.over.X01A)
+  hDat.xls <- hDat.xls %>% mutate(logFC.SCZ.over.CTRL = logFC.X03B.over.X02C*(-1))
+  hDat.xls <- hDat.xls %>% mutate(logFC.BP.over.CTRL = logFC.X03B.over.X01A*(-1))
+  hDat.xls <- hDat.xls %>% mutate(logFC.SCZ.over.BP = logFC.X02C.over.X01A)
+  hDat.xls <- hDat.xls %>% mutate(t.SCZ.over.CTRL = t.X03B.over.X02C*(-1))
+  hDat.xls <- hDat.xls %>% mutate(t.BP.over.CTRL = t.X03B.over.X01A*(-1))
+  hDat.xls <- hDat.xls %>% mutate(t.SCZ.over.BP = t.X02C.over.X01A)
+  hDat.xls <- hDat.xls %>% mutate(padj.SCZ.over.CTRL = adj.P.Val.X03B.over.X02C)
+  hDat.xls <- hDat.xls %>% mutate(padj.BP.over.CTRL = adj.P.Val.X03B.over.X01A)
+  hDat.xls <- hDat.xls %>% mutate(padj.SCZ.over.BP = adj.P.Val.X02C.over.X01A)
+
+  hDat.xls <- hDat.xls %>% mutate(scz.over.ctrl.sig = ifelse(padj.SCZ.over.CTRL < padjThreshold, 2, 0))
+  hDat.xls <- hDat.xls %>% mutate(bp.over.ctrl.sig = ifelse(padj.BP.over.CTRL < padjThreshold, 2, 0))
+  hDat.xls <- hDat.xls %>% mutate(scz.bp.both.sig = as.factor(scz.over.ctrl.sig + bp.over.ctrl.sig))
+
+  hDat.xls <- hDat.xls %>% mutate(scz.over.bp.sig = ifelse(padj.SCZ.over.BP < padjThreshold, 1, 0))
+  hDat.xls <- setGoVars(hDat.xls)
+  return (hDat.xls)
+}
+```
+
+```{r}
+grin2a.varset <- setVarsMouse(grin2a.xls.reduced)
+human.varset <- setVarsHuman(human.xls.reduced)
+```
+
+```{r}
+# Merge human and mouse
+bm<-read_csv("~/Google Drive/geneSets/geneNames/ensemblId_mouseGeneName_humanGeneName.csv")
+grin2a.varset.bm <- inner_join(grin2a.varset, bm, by=c("geneSymbol"="external_gene_name"))
+human.grin2a.xls <- inner_join(human.varset, grin2a.varset.bm, by=c("geneSymbol"="hsapiens_homolog_associated_gene_name"))
+dim(human.grin2a.xls)
+```
+```{r}
+getVars<-function(dat.xls, mouseDat, humanDat, mouseSig, humanSig){
+  dat.xls <- dat.xls %>% mutate(both.human.mouse.sig = .data[[mouseSig]]  + .data[[humanSig]])
+  curDat <- dat.xls %>% select(geneSymbol, 
+                             sym(mouseDat), 
+                             sym(humanDat),
+                             both.human.mouse.sig)
+  curDat <-  curDat %>% mutate(x=.data[[sym(mouseDat)]], y=.data[[sym(humanDat)]], color=both.human.mouse.sig)
+  return(curDat)
+}
+
+makeKoPlot <- function(dat.xls, mouseDat, humanDat, mouseSig, humanSig, lab){
+  fcCutOff <- 3
+  humanCond <- unlist(strsplit(humanDat, "[.]"))[2]
+  mouseCond <- unlist(strsplit(mouseDat, "[.]"))[2]
+  dat.curDat <- getVars(human.grin2a.xls, mouseDat, humanDat, mouseSig, humanSig)
+  scPlot <- makeScatterPlot(dat.curDat, lab)
+  scPlot <- scPlot + xlab(paste("Log2-fold change (", mouseCond, "/WT)", sep="")) + ylab(paste("Log2-fold change (", humanCond, "/CTRL)", sep=""))
+  nudge <- 2
+   scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==3 & x> 1)), as.character(geneSymbol), '')), 
+                                     show.legend = FALSE, 
+                                     segment.color='black', 
+                                     segment.size = 0.3, 
+                                     segment.alpha = .25, 
+                                     size=2.5,
+                                     max.overlaps = 15,
+                                     nudge_x      = nudge,
+                                     direction    = "y",
+                                     hjust        = 1,
+                                     )
+  
+   scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==3 & x < -1)), as.character(geneSymbol), '')), 
+                                     show.legend = FALSE, 
+                                     segment.color='black', 
+                                     segment.size = 0.3, 
+                                     segment.alpha = .25, 
+                                     size=2.5,
+                                     max.overlaps = 15,
+                                     nudge_x      = -nudge,
+                                     direction    = "y",
+                                     hjust        = 1,
+                                     )
+  
+  
+  scPlot <- scPlot + coord_cartesian(ylim=c(-5,5), xlim=c(-5,5))
+  return (scPlot)
+  
+}
+
+plotWidth = 9
+plotHeight = 9
+
+grin2a.human.scz <- makeKoPlot(human.grin2a.xls, "logFC.KO.over.WT","logFC.SCZ.over.CTRL","scz.over.ctrl.sig","ko.sig", c("NS", "Sig. Grin2a KO/WT", "Sig. SCZ/CTRL", "Sig. Both"))
+ggsave(plot = grin2a.human.scz, "~/Google Drive/psp/analysis/plots/human/comparison_with_micePSDs/lfcScatter_grin2a_ko_over_wt_v_human_SCZ_over_CTRL.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+grin2a.human.bp <- makeKoPlot(human.grin2a.xls,"logFC.KO.over.WT", "logFC.BP.over.CTRL", "bp.over.ctrl.sig","ko.sig", c("NS", "Sig. Grin2a KO/WT", "Sig. BP/CTRL", "Sig. Both"))
+ggsave(plot = grin2a.human.bp, "~/Google Drive/psp/analysis/plots/human/comparison_with_micePSDs/lfcScatter_grin2a_ko_over_wt_v_human_BP_over_CTRL.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+grin2a.human.scz <- makeKoPlot(human.grin2a.xls, "logFC.Het.over.WT","logFC.SCZ.over.CTRL","scz.over.ctrl.sig","hetOverWT.sig", c("NS", "Sig. Grin2a Het/WT", "Sig. SCZ/CTRL", "Sig. Both"))
+ggsave(plot = grin2a.human.scz, "~/Google Drive/psp/analysis/plots/human/comparison_with_micePSDs/lfcScatter_grin2a_het_over_wt_v_human_SCZ_over_CTRL.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+grin2a.human.bp <- makeKoPlot(human.grin2a.xls,"logFC.Het.over.WT", "logFC.BP.over.CTRL", "bp.over.ctrl.sig","hetOverWT.sig", c("NS", "Sig. Grin2a Het/WT", "Sig. BP/CTRL", "Sig. Both"))
+ggsave(plot = grin2a.human.bp, "~/Google Drive/psp/analysis/plots/human/comparison_with_micePSDs/lfcScatter_grin2a_het_over_wt_v_human_BP_over_CTRL.pdf", width = plotWidth, height = plotHeight, units = "in")
+
+```
+
+
+
+```{r}
+
+plotInterestingPathways <- function(xlsDat, mouseDat, humanDat){
+  plotWidth <- 9
+  plotHeight <- 9
+  count <- 1
+  goTerm <- interestingPathways
+  inputName <- "Grin2a"
+   while (count <= length(goTerm)) {
+     curDat <- xlsDat %>% select(geneSymbol, 
+                               sym(mouseDat),
+                               sym(humanDat)
+                               )
+    curDat <-  curDat %>% mutate(x=.data[[sym(mouseDat)]], y=.data[[sym(humanDat)]])
+    curDat <- curDat %>% mutate(color=as.factor(ifelse(geneSymbol %in% goTerm[[count]], 1, 0)))
+    humanCond <- unlist(strsplit(humanDat, "[.]"))[2]
+    mouseCond <- unlist(strsplit(mouseDat, "[.]"))[2]
+    lab <- c("", names(goTerm)[count])
+    scPlot <- makeScatterPlot(curDat, lab)
+    scPlot <- scPlot + xlab(paste("Log2-fold change (", mouseCond, "/WT)", sep="")) + ylab(paste("Log2-fold change (", humanCond, "/CTRL)", sep=""))
+    nudge <- 2
+    scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 & x> 1)), as.character(geneSymbol), '')), 
+                                       show.legend = FALSE, 
+                                       segment.color='black', 
+                                       segment.size = 0.2, 
+                                       segment.alpha = .25, 
+                                       size=2.5,
+                                       max.overlaps = 15,
+                                       nudge_x      = nudge,
+                                       direction    = "y",
+                                       hjust        = 1,
+                                       )
+    
+     scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 & x < -1)), as.character(geneSymbol), '')), 
+                                       show.legend = FALSE, 
+                                       segment.color='black', 
+                                       segment.size = 0.2, 
+                                       segment.alpha = .25, 
+                                       size=2.5,
+                                       max.overlaps = 15,
+                                       nudge_x      = -nudge,
+                                       direction    = "y",
+                                       hjust        = 1,
+                                       )
+    
+    
+    scPlot <- scPlot + coord_cartesian(ylim=c(-5,5), xlim=c(-5,5))
+    ggsave(plot = scPlot, paste("~/Google Drive/psp/analysis/plots/human/comparison_with_micePSDs/grin2a/",humanCond,"/",mouseCond, "/lfcScatter_", inputName, "_", mouseCond, "_over_WT_v_", humanCond, "_over_CTRL_", names(goTerm)[count], ".pdf", sep=""), width = plotWidth, height = plotHeight, units = "in")
+    count <- count + 1
+   } 
+}
+
+plotInterestingPathways(human.grin2a.xls, "logFC.KO.over.WT", "logFC.SCZ.over.CTRL")
+plotInterestingPathways(human.grin2a.xls, "logFC.Het.over.WT", "logFC.SCZ.over.CTRL")
+plotInterestingPathways(human.grin2a.xls, "logFC.KO.over.WT", "logFC.BP.over.CTRL")
+plotInterestingPathways(human.grin2a.xls, "logFC.Het.over.WT", "logFC.BP.over.CTRL")
+
+
+
+  
+```
+
+```{r}
+human.grin2a.glutsig <- human.grin2a.xls %>% filter(geneSymbol %in% GLUTAMATE_RECEPTOR_SIGNALING_PATHWAY)
+human.grin2a.glutsig <- human.grin2a.glutsig %>% select(geneSymbol, logFC.SCZ.over.CTRL, logFC.BP.over.CTRL, logFC.Het.over.WT)
+currTab.tmp <- human.grin2a.glutsig
+currTab.mat <- as.data.frame(currTab.tmp[,c(2:4)])
+rNames <- currTab.tmp %>% select("geneSymbol")
+rownames(currTab.mat) <- rNames$geneSymbol
+colnames(currTab.mat) <- c("SCZ/CTRL", "BP/CTRL", "Grin2a_Het/WT")
+
+col_fun = colorRamp2(c(-1.5, 0, 1.5), c("blue", "white", "red"))
+col_fun(seq(-3, 3))
+  
+currTabHmap <- Heatmap(currTab.mat, 
+                        row_names_gp = gpar(fontsize = 7), 
+                        cluster_columns = FALSE,
+                        column_title = NULL,
+                        heatmap_legend_param = list(title = NULL),
+                        col=col_fun, column_split=c("A", "A", "B"),
+                       )
+currTabHmap
+
+
+  pdf(file = "~/Google Drive/psp/analysis/plots/human/comparison_with_micePSDs/Heatmap_glutamate_signaling_human_V_Grin2a_Het.pdf",   
+      width = 3, # The width of the plot in inches
+      height = 12) # The height of the plot in inches
+  print(currTabHmap)
+  while (!is.null(dev.list()))  dev.off()
+```
+
+

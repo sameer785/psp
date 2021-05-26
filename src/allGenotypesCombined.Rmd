@@ -27,12 +27,29 @@ shank3.xls <- read_xlsx("../data/results_PSD-Shank3-proteome_Two-sample_mod_T_20
 grin2a.xls <- read_xlsx("../data/results_Glun2a-TMT16-Proteome_Two-sample_mod_T_2020-11-30.xlsx")
 goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
 pathways.go <- gmtPathways(goPathways)
-rnaSplicing <- str_to_title(pathways.go$GO_RNA_SPLICING)
-cytosolicRibosome <- str_to_title(pathways.go$GO_CYTOSOLIC_RIBOSOME)
-stressGranAs <- str_to_title(pathways.go$GO_STRESS_GRANULE_ASSEMBLY)
-glutSyn <- str_to_title(pathways.go$GO_GLUTAMATERGIC_SYNAPSE)
-vgc <- str_to_title(pathways.go$GO_VOLTAGE_GATED_ION_CHANNEL_ACTIVITY)
+RNA_SPLICING <- str_to_title(pathways.go$GO_RNA_SPLICING)
+CYTOSOLIC_RIBOSOME <- str_to_title(pathways.go$GO_CYTOSOLIC_RIBOSOME)
+STRESS_GRANULE_ASSEMBLY <- str_to_title(pathways.go$GO_STRESS_GRANULE_ASSEMBLY)
+GLUTAMATERGIC_SYNAPSE <- str_to_title(pathways.go$GO_GLUTAMATERGIC_SYNAPSE)
+VOLTAGE_GATED_ION_CHANNEL_ACTIVITY <- str_to_title(pathways.go$GO_VOLTAGE_GATED_ION_CHANNEL_ACTIVITY)
+
+MITOCHONDRIAL_PROTEIN_COMPLEX <- str_to_title(pathways.go$GO_MITOCHONDRIAL_PROTEIN_COMPLEX)
+SMALL_GTPASE_BINDING <- str_to_title(pathways.go$GO_SMALL_GTPASE_BINDING)
+INTRINSIC_COMPONENT_OF_POSTSYNAPTIC_MEMBRANE <- str_to_title(pathways.go$GO_INTRINSIC_COMPONENT_OF_POSTSYNAPTIC_MEMBRANE)
+PROTEIN_LOCALIZATION_TO_SYNAPSE <- str_to_title(pathways.go$GO_PROTEIN_LOCALIZATION_TO_SYNAPSE)
+NEURON_PROJECTION_EXTENSION <- str_to_title(pathways.go$GO_NEURON_PROJECTION_EXTENSION)
+MITOCHONDRIAL_MATRIX <- str_to_title(pathways.go$GO_MITOCHONDRIAL_MATRIX)
+OXIDATIVE_PHOSPHORYLATION <- str_to_title(pathways.go$GO_OXIDATIVE_PHOSPHORYLATION)
+MGLUR <- paste("Grm", c(1:8), sep="")
+GABAA_RECEPTOR <- c(paste("Gabra", c(1:5), sep=""), paste("Gabrb", c(1:3), sep=""), paste("Gabrg", c(1:3), sep=""), paste("Gabrb", c("d","e","p","q"), sep=""), paste("Gabrr", c(1:3), sep=""))
+ANTIGEN_PROCESSING_AND_PRESENTATION_OF_EXOGENOUS_PEPTIDE_ANTIGEN_VIA_MHC_CLASS_I <- str_to_title(pathways.go$GO_ANTIGEN_PROCESSING_AND_PRESENTATION_OF_EXOGENOUS_PEPTIDE_ANTIGEN_VIA_MHC_CLASS_I)
+FC_RECEPTOR_SIGNALING_PATHWAY <- str_to_title(pathways.go$GO_FC_RECEPTOR_SIGNALING_PATHWAY)
+GLUTAMATE_RECEPTOR_SIGNALING_PATHWAY <- str_to_title(pathways.go$GO_GLUTAMATE_RECEPTOR_SIGNALING_PATHWAY)
+MACROAUTOPHAGY <- str_to_title(pathways.go$GO_MACROAUTOPHAGY)
+
 ```
+
+
 
 ```{r}
 pVal <- 0.1
@@ -49,13 +66,27 @@ setVars<-function(dat.xls){
   dat.xls <- dat.xls %>% mutate(both.sig = as.factor(ko.sig + het.sig))
   dat.xls <- dat.xls %>% mutate(koOverHet.sig = ifelse(P.Value.KO.over.Het < pVal, 2, 0))
   dat.xls <- dat.xls %>% mutate(both.koOverHet.sig = as.factor(hetOverWT.sig + koOverHet.sig))
-  dat.xls <- dat.xls %>% mutate(splicing = ifelse(geneSymbol %in% rnaSplicing, 1, 0))
-  dat.xls <- dat.xls %>% mutate(cytosolicRibosome = ifelse(geneSymbol %in% cytosolicRibosome, 2, 0))
-  dat.xls <- dat.xls %>% mutate(spl.ribo = splicing + cytosolicRibosome)
-  dat.xls <- dat.xls %>% mutate(stressGranuleAssembly = ifelse(geneSymbol %in% stressGranAs, 1, 0))
-  dat.xls <- dat.xls %>% mutate(glutamatergicSynapse = ifelse(geneSymbol %in% glutSyn, 1, 0))
-  dat.xls <- dat.xls %>% mutate(vgc = ifelse(geneSymbol %in% vgc, 1, 0))
-
+  dat.xls <- dat.xls %>% mutate(RNA_SPLICING = ifelse(geneSymbol %in% RNA_SPLICING, 1, 0))
+  dat.xls <- dat.xls %>% mutate(CYTOSOLIC_RIBOSOME = ifelse(geneSymbol %in% CYTOSOLIC_RIBOSOME, 1, 0))
+  #dat.xls <- dat.xls %>% mutate(spl.ribo = RNA_SPLICING + CYTOSOLIC_RIBOSOME)
+  dat.xls <- dat.xls %>% mutate(STRESS_GRANULE_ASSEMBLY = ifelse(geneSymbol %in% STRESS_GRANULE_ASSEMBLY, 1, 0))
+  dat.xls <- dat.xls %>% mutate(GLUTAMATERGIC_SYNAPSE = ifelse(geneSymbol %in% GLUTAMATERGIC_SYNAPSE, 1, 0))
+  dat.xls <- dat.xls %>% mutate(VOLTAGE_GATED_ION_CHANNEL_ACTIVITY = ifelse(geneSymbol %in% VOLTAGE_GATED_ION_CHANNEL_ACTIVITY, 1, 0))
+  
+  dat.xls <- dat.xls %>% mutate(MITOCHONDRIAL_PROTEIN_COMPLEX = ifelse(geneSymbol %in% MITOCHONDRIAL_PROTEIN_COMPLEX, 1, 0))
+  dat.xls <- dat.xls %>% mutate(SMALL_GTPASE_BINDING = ifelse(geneSymbol %in% SMALL_GTPASE_BINDING, 1, 0))
+  dat.xls <- dat.xls %>% mutate(INTRINSIC_COMPONENT_OF_POSTSYNAPTIC_MEMBRANE = ifelse(geneSymbol %in% INTRINSIC_COMPONENT_OF_POSTSYNAPTIC_MEMBRANE, 1, 0))
+  dat.xls <- dat.xls %>% mutate(PROTEIN_LOCALIZATION_TO_SYNAPSE = ifelse(geneSymbol %in% PROTEIN_LOCALIZATION_TO_SYNAPSE, 1, 0))
+  dat.xls <- dat.xls %>% mutate(NEURON_PROJECTION_EXTENSION = ifelse(geneSymbol %in% NEURON_PROJECTION_EXTENSION, 1, 0))
+  dat.xls <- dat.xls %>% mutate(MITOCHONDRIAL_MATRIX = ifelse(geneSymbol %in% MITOCHONDRIAL_MATRIX, 1, 0))
+  dat.xls <- dat.xls %>% mutate(OXIDATIVE_PHOSPHORYLATION = ifelse(geneSymbol %in% OXIDATIVE_PHOSPHORYLATION, 1, 0))
+  dat.xls <- dat.xls %>% mutate(MGLUR = ifelse(geneSymbol %in% MGLUR, 1, 0))
+  dat.xls <- dat.xls %>% mutate(GABAA_RECEPTOR = ifelse(geneSymbol %in% GABAA_RECEPTOR, 1, 0))
+  dat.xls <- dat.xls %>% mutate(ANTIGEN_PROCESSING_AND_PRESENTATION_OF_EXOGENOUS_PEPTIDE_ANTIGEN_VIA_MHC_CLASS_I = ifelse(geneSymbol %in% ANTIGEN_PROCESSING_AND_PRESENTATION_OF_EXOGENOUS_PEPTIDE_ANTIGEN_VIA_MHC_CLASS_I, 1, 0))
+  dat.xls <- dat.xls %>% mutate(FC_RECEPTOR_SIGNALING_PATHWAY = ifelse(geneSymbol %in% FC_RECEPTOR_SIGNALING_PATHWAY, 1, 0))
+  dat.xls <- dat.xls %>% mutate(GLUTAMATE_RECEPTOR_SIGNALING_PATHWAY = ifelse(geneSymbol %in% GLUTAMATE_RECEPTOR_SIGNALING_PATHWAY, 1, 0))
+  dat.xls <- dat.xls %>% mutate(MACROAUTOPHAGY = ifelse(geneSymbol %in% MACROAUTOPHAGY, 1, 0))
+  
   return (dat.xls)
 }
 
@@ -64,6 +95,50 @@ shank3.xls <- setVars(shank3.xls)
 grin2a.xls <- setVars(grin2a.xls)
 ```
 
+```{r}
+getVars<-function(dat.xls, goTerm){
+  curDat <- dat.xls %>% select(geneSymbol, 
+                             logFC.KO.over.WT, 
+                             logFC.Het.over.WT,
+                             logFC.KO.over.Het,
+                             all_of(goTerm),
+                             )
+  curDat <-  curDat %>% mutate(x=logFC.KO.over.WT, y=logFC.Het.over.WT)
+  curDat <- curDat %>% mutate(color=.[[5]])
+  return(curDat)
+}
+
+plotWidth <- 9
+plotHeight <- 9
+
+makeHetKoPlot <- function(dat.xls, goName){
+  fcCutOff <- 1.5
+  dat.curDat <- getVars(dat.xls, goName)
+  lab <- c("", goName)
+  scPlot <- makeScatterPlot(dat.curDat, lab)
+  scPlot <- scPlot + xlab("Log2-fold change (KO/WT)") + ylab("Log2-fold change (Het/WT)")
+  scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 & x> 1) | (color==1 & y > 1) | (color==1 & x < -1) | (color==1 & y < -1)), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25, size=3)
+  scPlot <- scPlot + coord_cartesian(ylim=c(-5,5), xlim=c(-5,5))
+  return(scPlot)
+}
+
+makeAllHetKoPlots <- function(input.xls, inputCount, inputName){
+  count <- inputCount
+  cols <- dim(input.xls)[2]
+  while (count <= cols){
+    goName <- colnames(input.xls)[count]
+    dat.plot <- makeHetKoPlot(input.xls, goName)
+    ggsave(plot = dat.plot, paste("~/Google Drive/psp/analysis/plots/", inputName, "/lfcScatter_ko_v_het_", goName, ".pdf", sep=""), width = plotWidth, height = plotHeight, units = "in")
+    count <- count + 1
+  }
+}
+
+
+makeAllHetKoPlots(trio.xls, 66, "trio")
+makeAllHetKoPlots(shank3.xls, 66, "shank3")
+makeAllHetKoPlots(grin2a.xls, 68, "grin2a")
+
+```
 
 
 
@@ -78,12 +153,12 @@ grin2a.xls <- setVars(grin2a.xls)
 # trio.xls <- setColNames(trio.xls, ".trio")
 # shank3.xls <- setColNames(shank3.xls, ".shank3")
 # grin2a.xls <- setColNames(grin2a.xls, ".grin2a")
-
+# 
 all.xls <- inner_join(trio.xls, shank3.xls, by="id")
 all.xls <- inner_join(all.xls, grin2a.xls, by="id")
 
-# all.xls <- full_join(trio.xls, shank3.xls, by="id")
-# all.xls <- full_join(all.xls, grin2a.xls, by="id")
+all.xls <- full_join(trio.xls, shank3.xls, by="id")
+all.xls <- full_join(all.xls, grin2a.xls, by="id")
 ```
 
 
@@ -247,13 +322,43 @@ saveHeatMaps <- function(xlsFile, goTerm, goName){
 ```
 
 ```{r}
-saveHeatMaps(all.xls, rnaSplicing, "splicing")
+saveHeatMaps(all.xls, RNA_SPLICING, "splicing")
 mitoProComp <- str_to_title(pathways.go$GO_MITOCHONDRIAL_PROTEIN_COMPLEX)
-saveHeatMaps(all.xls, mitoProComp, "mitochondrial_protein_complex")
+saveHeatMaps(all.xls, MITOCHONDRIAL_PROTEIN_COMPLEX, "mitochondrial_protein_complex")
 smallGtpaseBinding <- str_to_title(pathways.go$GO_SMALL_GTPASE_BINDING)
-saveHeatMaps(all.xls, smallGtpaseBinding, "small_gtpase_binding")
+saveHeatMaps(all.xls, SMALL_GTPASE_BINDING, "small_gtpase_binding")
+postSynapticIntrinsic <- str_to_title(pathways.go$GO_INTRINSIC_COMPONENT_OF_POSTSYNAPTIC_MEMBRANE)
+saveHeatMaps(all.xls, INTRINSIC_COMPONENT_OF_POSTSYNAPTIC_MEMBRANE, "intrinsic_postsynaptic_membrane")
+proLocSyn <- str_to_title(pathways.go$GO_PROTEIN_LOCALIZATION_TO_SYNAPSE)
+saveHeatMaps(all.xls, PROTEIN_LOCALIZATION_TO_SYNAPSE, "protein_localization_to_synapse")
+neuProEx <- str_to_title(pathways.go$GO_NEURON_PROJECTION_EXTENSION)
+saveHeatMaps(all.xls, NEURON_PROJECTION_EXTENSION, "neuron_projection_extension")
+mitoMat <- str_to_title(pathways.go$GO_MITOCHONDRIAL_MATRIX)
+saveHeatMaps(all.xls, MITOCHONDRIAL_MATRIX, "mitochondrial_matrix")
+oxPhos <- str_to_title(pathways.go$GO_OXIDATIVE_PHOSPHORYLATION)
+saveHeatMaps(all.xls, OXIDATIVE_PHOSPHORYLATION, "oxidative_phosphorylation")
+mglur <- paste("Grm", c(1:8), sep="")
+saveHeatMaps(all.xls, MGLUR, "metabotropic_glutamate_receptors")
+gabaa <- c(paste("Gabra", c(1:5), sep=""), paste("Gabrb", c(1:3), sep=""), paste("Gabrg", c(1:3), sep=""), paste("Gabrb", c("d","e","p","q"), sep=""), paste("Gabrr", c(1:3), sep=""))
+saveHeatMaps(all.xls, GABAA_RECEPTOR, "gaba_A_receptors")
+
+antigenProcessing <- str_to_title(pathways.go$GO_ANTIGEN_PROCESSING_AND_PRESENTATION_OF_EXOGENOUS_PEPTIDE_ANTIGEN_VIA_MHC_CLASS_I)
+saveHeatMaps(all.xls, ANTIGEN_PROCESSING_AND_PRESENTATION_OF_EXOGENOUS_PEPTIDE_ANTIGEN_VIA_MHC_CLASS_I, "antigen_processing")
+
+fcRec <- str_to_title(pathways.go$GO_FC_RECEPTOR_SIGNALING_PATHWAY)
+saveHeatMaps(all.xls, FC_RECEPTOR_SIGNALING_PATHWAY, "fc_receptor_signaling")
+
+gluRecSig <- str_to_title(pathways.go$GO_GLUTAMATE_RECEPTOR_SIGNALING_PATHWAY)
+saveHeatMaps(all.xls, GLUTAMATE_RECEPTOR_SIGNALING_PATHWAY, "glutamate_receptor_signaling_pathway")
+
+macAuto <- str_to_title(pathways.go$GO_MACROAUTOPHAGY)
+saveHeatMaps(all.xls, MACROAUTOPHAGY, "macroautophagy")
+```
+
+```{r}
 
 ```
+
 
 ```{r}
 plotWidth <- 9
@@ -412,8 +517,11 @@ ggsave(plot = gp, "~/Google Drive/psp/analysis/plots/combined/discrete_sig_all_k
 ```{r}
 all.xls <- full_join(trio.xls, shank3.xls, by="id")
 all.xls <- full_join(all.xls, grin2a.xls, by="id")
-all.xls <- all.xls %>% mutate(anySig = ifelse(geneSymbol=="Srrm2", 1, 0))
-schemaGenes <- as.factor(c("Setd1a", "Cul1", "Xpo7", "Trio", "Cacna1g", "Sp4", "Gria3", "Grin2a", "Herc1", "Rb1cc1", "Hcn4", "Akap11", "Znf136", "Srrm2", "Nr3c2", "Zmym2", "Fam120a", "Slf2", "Kdm6b", "Dnm3", "Ash1l", "Stag1", "Hist1h1e", "Prep", "Magec1", "Magi2", "Dagla", "Or4p4", "Slc22a11", "Ankrd12", "Eif2s3x", "Eif2s3y"))
+schemaGenes <- c("Rbfox1", "Rbfox2", "Rbfox3")
+#all.xls <- all.xls %>% mutate(anySig = ifelse(geneSymbol=="Srrm2", 1, 0))
+all.xls <- all.xls %>% mutate(anySig = ifelse(geneSymbol %in% schemaGenes, 1, 0))
+
+# schemaGenes <- as.factor(c("Setd1a", "Cul1", "Xpo7", "Trio", "Cacna1g", "Sp4", "Gria3", "Grin2a", "Herc1", "Rb1cc1", "Hcn4", "Akap11", "Znf136", "Srrm2", "Nr3c2", "Zmym2", "Fam120a", "Slf2", "Kdm6b", "Dnm3", "Ash1l", "Stag1", "Hist1h1e", "Prep", "Magec1", "Magi2", "Dagla", "Or4p4", "Slc22a11", "Ankrd12", "Eif2s3x", "Eif2s3y"))
 
 all.lfcs <- all.xls  %>% filter(geneSymbol %in% schemaGenes | geneSymbol.x %in% schemaGenes | geneSymbol.y %in% schemaGenes) %>% select(logFC.Het.over.WT.x, 
                                logFC.KO.over.WT.x, 
@@ -422,9 +530,16 @@ all.lfcs <- all.xls  %>% filter(geneSymbol %in% schemaGenes | geneSymbol.x %in% 
                                logFC.Het.over.WT, 
                                logFC.KO.over.WT,
                                id,
-                               geneSymbol
+                               geneSymbol,
+                               geneSymbol.x,
+                               geneSymbol.y
                                )
-all.lfcs <- all.lfcs %>% mutate(gId = paste(geneSymbol,id, sep="_"), .keep="unused")
+all.geneSymbols <- all.lfcs %>% select(geneSymbol, geneSymbol.x, geneSymbol.y)
+unique_geneSymbols <- sapply(apply(all.geneSymbols[,-1],1, unique),function(x) paste(na.omit(x),collapse = ""))
+all.lfcs <- all.lfcs %>% mutate(gId = unique_geneSymbols)
+
+all.lfcs <- all.lfcs %>% mutate(gId = paste(gId,id, sep="_"), .keep="unused")
+all.lfcs <- all.lfcs %>% select(-one_of(c('geneSymbol', 'geneSymbol.x', 'geneSymbol.y')))
 
 colnames(all.lfcs) <- c("hetOverWt.trio", "koOverWt.trio", "hetOverWt.shank3", "koOverWt.shank3","hetOverWt.grin2a", "koOverWt.grin2a", "geneSymbol")
 all.lfcs.m <- melt(all.lfcs, id="geneSymbol")
@@ -438,18 +553,18 @@ source("~/Google Drive/psp/functions/setTheme.R")
 gp <- ggplot(data = all.lfcs.m, aes(x=variable, y=value, group=geneSymbol, color=as.factor(pVal)))
 gp <- gp + th
 gp <- gp + geom_beeswarm(show.legend = FALSE)
-gp <- gp + geom_line(show.legend = FALSE)
+regp <- gp + geom_line(show.legend = FALSE)
 gp <- gp + scale_color_manual(values=c('gray90', 'black'))
 gp <- gp + ylab("Log2 fold change")
 gp <- gp + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 gp <- gp + scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
-gp <- gp + coord_cartesian(ylim=c(-5,5))
+gp <- gp + coord_cartesian(ylim=c(-2,2))
 xLab <- c("Trio (Het/WT)", "Trio (KO/WT)", "Shank3 (Het/WT)", "Shank3 (KO/WT)", "Grin2a (Het/WT)", "Grin2a (KO/WT)")
 gp <- gp + scale_x_discrete(labels=xLab)
 gp <- gp + geom_text_repel(aes(label=ifelse((variable=="koOverWt.grin2a"), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25)
 gp <- gp + theme(axis.title.x=element_blank())
 gp
-ggsave(plot = gp, "~/Google Drive/psp/analysis/plots/combined/discrete_scz_genes.pdf", width = 8, height = 6, units = "in")
+# ggsave(plot = gp, "~/Google Drive/psp/analysis/plots/combined/discrete_scz_genes.pdf", width = 8, height = 6, units = "in")
 
 ```
 
@@ -499,4 +614,3 @@ gp
 ggsave(plot = gp, "~/Google Drive/psp/analysis/plots/combined/discrete_neg_log2fold_1.pdf", width = 8, height = 6, units = "in")
 
 ```
-

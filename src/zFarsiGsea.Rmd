@@ -29,6 +29,38 @@ invisible(lapply(files.sources, source))
 zfdat.bulk <- read_xlsx("~/Google Drive/psp/data/210201_log2FC_for Sameer.xlsx", sheet = 1, na="NaN")
 zfdat.sn.grin2a <- read_xlsx("~/Google Drive/psp/data/210201_log2FC_for Sameer.xlsx", sheet = 2,  na="NaN")
 zfdat.sn.grin2b <- read_xlsx("~/Google Drive/psp/data/210201_log2FC_for Sameer.xlsx", sheet = 3,  na="NaN")
+zfdat.april2 <- read_xlsx("~/Google Drive/psp/data/210402_HP_stats_for Sameer.xlsx", sheet = 1, na="NA")
+zfdat.grin2b.all <- read_xlsx("~/Google Drive/psp/data/210408_stats_Grin2b_all_timepoints.xlsx", sheet = 1, na="NaN")
+zfdat.grin2a.12w.all <- read_xlsx("~/Google Drive/psp/data/210423-stats_Grin2a_12w_all brain regions.xlsx", sheet=1, na="NaN")
+
+
+
+zfdat.all.apr28.path <- "~/Google Drive/psp/data/210428_stats_single_bulk.xlsx"
+
+zfdat.all.apr28<-zfdat.all.apr28.path %>% 
+  excel_sheets() %>% 
+  set_names() %>% 
+  map(read_xlsx, path = zfdat.all.apr28.path, na="NaN")
+
+zfdat.all.may4.path <- "~/Google Drive/psp/data/210504_HP_12week_stats.xlsx"
+zfdat.all.may4 <- zfdat.all.may4.path %>% 
+  excel_sheets() %>% 
+  set_names() %>% 
+  map(read_xlsx, path = zfdat.all.may4.path, na="NaN")
+
+
+zfdat.all.may18.path <- "~/Google Drive/psp/data/210518_LFC_PFC_12week.xlsx"
+zfdat.all.may18 <- zfdat.all.may18.path %>% 
+  excel_sheets() %>% 
+  set_names() %>% 
+  map(read_xlsx, path = zfdat.all.may18.path, na="NaN")
+
+zfdat.all.may21.path <- "~/Google Drive/psp/data/210521_LFC_PFC_P28.xlsx"
+zfdat.all.may21 <- zfdat.all.may21.path %>% 
+  excel_sheets() %>% 
+  set_names() %>% 
+  map(read_xlsx, path = zfdat.all.may21.path, na="NaN")
+
 ```
 
 
@@ -42,7 +74,7 @@ doGo <- function(tbl){
     currRes <- doGseaZfarsi(currCols, goPathways)
     currResMod <- currRes %>% mutate(leadingEdge = map_chr(leadingEdge, toString))
     resNameBase <- names(tbl[item])
-    resNamePath <- "~/Google Drive/psp/analysis/res_zFarsi/"
+    resNamePath <- "~/Google Drive/psp/analysis/res_zFarsi/Grin2a-PFC-4w/"
     resName <- paste(resNamePath, resNameBase, ".csv", sep="")
     write_csv(currResMod, file = resName)
   }
@@ -52,8 +84,26 @@ doGo <- function(tbl){
 
 ```{r}
 goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
+doGo(zfdat.april2)
 doGo(zfdat.bulk)
 doGo(zfdat.sn.grin2a)
 doGo(zfdat.sn.grin2b)
+doGo(zfdat.grin2b.all)
+doGo(zfdat.grin2a.12w.all)
+
+
+zfdat.all.apr28 %>% map(doGo)
+
+doGo(zfdat.all.apr28$Mic_HT)
+doGo(zfdat.all.apr28$Mic_KO)
+doGo(zfdat.all.apr28$Ast_HT)
+doGo(zfdat.all.apr28$Ast_KO)
+
+zfdat.all.may4 %>% map(doGo)
+
+zfdat.all.may18 %>% map(doGo)
+
+zfdat.all.may21 %>% map(doGo)
+
 ```
 

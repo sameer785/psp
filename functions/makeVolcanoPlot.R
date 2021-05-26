@@ -1,9 +1,9 @@
-makeVolcanoPlot <- function(tbl, selLab, cAlph, colCust, legPos){
+makeVolcanoPlot <- function(tbl, xVar, yVar, selLab, cAlph, colCust, legPos){
   if(missing(selLab)){
     selLab <- NULL
   }
   if(missing(cAlph)){
-    cAlph <- 0.5
+    cAlph <- 0.6
   }
   if(missing(colCust)){
     colCust <- NULL
@@ -11,12 +11,18 @@ makeVolcanoPlot <- function(tbl, selLab, cAlph, colCust, legPos){
   if(missing(legPos)){
     legPos <- 'none'
   }
+  if(missing(xVar)){
+    xVar <- "logFC.KO.over.WT"
+  }
+  if(missing(yVar)){
+    yVar <- "P.Value.WT.over.KO"
+  }
   
   vPlot <- EnhancedVolcano(tbl,
-                           x="logFC.KO.over.WT",
-                           y="P.Value.WT.over.KO",
+                           x=xVar,
+                           y=yVar,
                            lab=tbl$geneSymbol,
-                           FCcutoff = 3, 
+                           FCcutoff = 1, 
                            gridlines.major = FALSE, 
                            gridlines.minor = FALSE,
                            border = 'partial', 
@@ -30,10 +36,12 @@ makeVolcanoPlot <- function(tbl, selLab, cAlph, colCust, legPos){
                            caption = element_blank(),
                            drawConnectors = TRUE, 
                            colConnectors = 'grey50',
-                           pCutoff = 10e-3,
+                           pCutoff = 10e-2,
                            lengthConnectors = unit(0.01,'npc'),
                            widthConnectors=0.3,
-                           typeConnectors = "open"
+                           typeConnectors = "open",
+                           labSize = 5.0,
+                           pointSize = 3
   )
   vPlot <- vPlot + scale_x_continuous(breaks = scales::pretty_breaks(n=10))
   vPlot <- vPlot + scale_y_continuous(breaks = scales::pretty_breaks(n=10))

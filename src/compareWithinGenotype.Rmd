@@ -31,7 +31,7 @@ grin2a.xls <- read_xlsx("../data/results_Glun2a-TMT16-Proteome_Two-sample_mod_T_
 rna.grin2a.het <- read_csv("../data/HP_HTWT-DESeq2_102020.csv")
 rna.grin2a.hom <- read_csv("../data/HP_HHWT-DESeq2_102020.csv")
 goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
-goPathways2 <- "~/Google Drive/geneSets/mSigDb/v7_2/curated/c2.cp.reactome.v7.2.symbols.gmt"
+goPathways2 <- "~/Google Drive/geneSets/mSigDb/v7_2/curated/c2.cp.kegg.v7.2.symbols.gmt"
 pathways.go <- gmtPathways(goPathways)
 rnaSplicing <- str_to_title(pathways.go$GO_RNA_SPLICING)
 cytosolicRibosome <- str_to_title(pathways.go$GO_CYTOSOLIC_RIBOSOME)
@@ -85,9 +85,6 @@ getVars<-function(dat.xls){
   return(curDat)
 }
 
-plotWidth <- 12
-plotHeight <- 8
-
 ```
 
 
@@ -100,17 +97,25 @@ makeHetKoPlot <- function(dat.xls){
   scPlot <- makeScatterPlot(dat.curDat, lab)
   scPlot <- scPlot + xlab("Log2-fold change (KO/WT)") + ylab("Log2-fold change (Het/WT)")
   scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==3 & (x > fcCutOff | x < -fcCutOff | y > fcCutOff | y < -fcCutOff)),
-                                                      as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black',
-                                                      segment.size = .5, segment.alpha = .25)
-    scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 | color==2) & (x< -5 | x>5 | y< -5 | y>5)), as.character(geneSymbol), '')), 
-                                       show.legend = FALSE, 
-                                       segment.color='black', 
-                                       segment.size = .5, 
-                                       segment.alpha = .25)
+                                                      as.character(geneSymbol), '')), 
+                                                      show.legend = FALSE, 
+                                                      segment.color='black',
+                                                      segment.size = .5, 
+                                                      segment.alpha = .25,
+                                                      max.overlaps = 10,
+                                                      size=4)
+    # scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 | color==2) & (x< -5 | x>5 | y< -5 | y>5)), as.character(geneSymbol), '')), 
+    #                                    show.legend = FALSE, 
+    #                                    segment.color='black', 
+    #                                    segment.size = .5, 
+    #                                    segment.alpha = .25)
   
   scPlot <- scPlot + coord_cartesian(ylim=c(-7,7), xlim=c(-7,7))
   return(scPlot)
 }
+
+plotWidth <- 9
+plotHeight <- 9
 
 trio.hetko <- makeHetKoPlot(trio.xls)
 ggsave(plot = trio.hetko, "~/Google Drive/psp/analysis/plots/trio/lfcScatter_ko_v_het.pdf", width = plotWidth, height = plotHeight, units = "in")
@@ -132,16 +137,16 @@ makeHetKoPlot <- function(dat.xls){
   lab  <- c("NS", "Sig. KO/WT", "Sig. Het/WT", "Sig. Both")
   scPlot <- makeScatterPlot(dat.curDat, lab)
   scPlot <- scPlot + xlab("Log2-fold change (KO/WT)") + ylab("Log2-fold change (Het/WT)")
-  scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==3 & (x < -fcCutOff | y < -fcCutOff)),
+  scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((x < -fcCutOff | y < -fcCutOff)),
                                                       as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black',
                                                       segment.size = .5, segment.alpha = .25)
-    scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 | color==2) & (x< -5 | y< -5)), as.character(geneSymbol), '')), 
-                                       show.legend = FALSE, 
-                                       segment.color='black', 
-                                       segment.size = .5, 
-                                       segment.alpha = .25)
+    # scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((color==1 | color==2) & (x< -5 | y< -5)), as.character(geneSymbol), '')), 
+    #                                    show.legend = FALSE, 
+    #                                    segment.color='black', 
+    #                                    segment.size = .5, 
+    #                                    segment.alpha = .25)
   
-  scPlot <- scPlot + coord_cartesian(ylim=c(-3,0), xlim=c(-3,0))
+  scPlot <- scPlot + coord_cartesian(ylim=c(-5,0), xlim=c(-5,0))
   return(scPlot)
 }
 
@@ -217,8 +222,8 @@ getVars<-function(dat.xls){
   return(curDat)
 }
 
-plotWidth <- 12
-plotHeight <- 8
+plotWidth <- 9
+plotHeight <- 9
 
 makeHetKoPlot <- function(dat.xls){
   fcCutOff <- 2
@@ -299,11 +304,13 @@ grin2a.go <- getGoAnalyses(grin2a.xls)
 shank3.go <- getGoAnalyses(shank3.xls)
 trio.go <- getGoAnalyses(trio.xls) 
 ```
+
 ```{r}
 tst.koOverWt <- 't.KO.over.WT'
 tst.hetOverWt <- 't.Het.over.WT'
 tst.koOverHet <- 't.KO.over.Het'
 
+goPathways2 <- "~/Google Drive/geneSets/mSigDb/v7_2/curated/c2.cp.kegg.v7.2.symbols.gmt"
 getGoAnalyses <- function(dat){
   dat.koOverWt.go <- doGoAnalysis(dat, goPathways2, tStat=tst.koOverWt)
   dat.hetOverWt.go <- doGoAnalysis(dat, goPathways2, tStat=tst.hetOverWt)
@@ -386,20 +393,40 @@ ggsave(plot = trio.go.scatter, "~/Google Drive/psp/analysis/plots/trio/goScatter
 
 ```{r}
 
-pVal <- 10e-5
+pVal <- 10e-8
 all.go <- inner_join(grin2a.go, shank3.go, by="pathway", suffix=c(".grin2a", ".shank3"))
 all.go <- inner_join(all.go, trio.go, by="pathway")
 sig.go <- all.go %>% filter(padj.x.grin2a < pVal | padj.x.shank3 < pVal | padj.x < pVal | padj.y.grin2a < pVal | padj.y.shank3 < pVal | padj.y < pVal)
-sig.nes <- sig.go %>% select(pathway, NES.x.grin2a, NES.y.grin2a, NES.x.shank3, NES.y.shank3, NES.x, NES.y)
-sig.nes <- sig.nes %>% rename(Grin2a.koOverWt=NES.x.grin2a, grin2a.hetOverWt=NES.y.grin2a, shank3.koOverWt=NES.x.shank3, shank3.hetOverWt=NES.y.shank3, trio.koOverWt=NES.x, trio.hetOverWt=NES.y)
+sig.nes <- sig.go %>% select(pathway, NES.y.grin2a, NES.x.grin2a , NES.y.shank3,NES.x.shank3, NES.y, NES.x)
+sig.nes <- sig.nes %>% rename(Grin2a_Het.over.WT =NES.y.grin2a, Grin2a_KO.over.WT =NES.x.grin2a, Shank3_Het.over.WT =NES.y.shank3, Shank3_KO.over.WT =NES.x.shank3, Trio_Het.over.WT =NES.y, Trio_KO.over.WT =NES.x)
 sig.nes <- as.data.frame(sig.nes)
 rownames(sig.nes) <- substring(sig.nes$pathway,4)
 sig.nes <- sig.nes[,c(-1)]
 library(circlize)
 col_fun = colorRamp2(c(-3, 0, 3), c("blue", "white", "red"))
 col_fun(seq(-3, 3))
-sig.nes.hmap <- Heatmap(sig.nes, row_names_gp = gpar(fontsize = 6), col=col_fun, heatmap_legend_param = list(title=NULL))
-pdf(file = "~/Google Drive/psp/analysis/plots/combined/heatmap_anySigGo_nes.pdf", width = 5,  height = 40)
+sig.nes.hmap <- Heatmap(sig.nes, row_names_gp = gpar(fontsize = 6), col=col_fun, heatmap_legend_param = list(title=NULL), cluster_columns = FALSE) #row_km=4
+pdf(file = "~/Google Drive/psp/analysis/plots/combined/heatmap_anySigGo_nes_10e8.pdf", width = 5,  height = 40)
+sig.nes.hmap
+dev.off()
+```
+
+```{r}
+
+pVal <- 10e-3
+all.go <- inner_join(grin2a.go2, shank3.go2, by="pathway", suffix=c(".grin2a", ".shank3"))
+all.go <- inner_join(all.go, trio.go2, by="pathway")
+sig.go <- all.go %>% filter(padj.x.grin2a < pVal | padj.x.shank3 < pVal | padj.x < pVal | padj.y.grin2a < pVal | padj.y.shank3 < pVal | padj.y < pVal)
+sig.nes <- sig.go %>% select(pathway, NES.x.grin2a, NES.y.grin2a, NES.x.shank3, NES.y.shank3, NES.x, NES.y)
+sig.nes <- sig.nes %>% rename(Grin2a_KO.over.WT =NES.x.grin2a, Grin2a_Het.over.WT =NES.y.grin2a, Shank3_KO.over.WT =NES.x.shank3, Shank3_Het.over.WT =NES.y.shank3, Trio_KO.over.WT =NES.x, Trio_Het.over.WT =NES.y)
+sig.nes <- as.data.frame(sig.nes)
+rownames(sig.nes) <- sig.nes$pathway
+sig.nes <- sig.nes[,c(-1)]
+library(circlize)
+col_fun = colorRamp2(c(-3, 0, 3), c("blue", "white", "red"))
+col_fun(seq(-3, 3))
+sig.nes.hmap <- Heatmap(sig.nes, row_names_gp = gpar(fontsize = 4), col=col_fun, heatmap_legend_param = list(title=NULL), cluster_columns = FALSE)
+pdf(file = "~/Google Drive/psp/analysis/plots/combined/heatmap_anySigGo_nes_KEGG.pdf", width = 4,  height = 12)
 sig.nes.hmap
 dev.off()
 ```
@@ -425,8 +452,9 @@ dev.off()
 
 ```{r}
 pVal <- 0.1
-plotWidth <- 12
-plotHeight <- (6/8)*plotWidth
+plotWidth <- 9
+plotHeight <- 9
+
 rna.grin2a <- inner_join(rna.grin2a.hom, rna.grin2a.het, suffix=c(".ko",".het"), by="X1")
 rna.grin2a <- rna.grin2a %>% drop_na(log2FoldChange.ko, log2FoldChange.het, padj.ko, padj.het)
 rna.grin2a <- rna.grin2a %>% mutate(x=log2FoldChange.ko,y=log2FoldChange.het)
@@ -446,17 +474,23 @@ ggsave("~/Google Drive/psp/analysis/plots/grin2a/RNA_koOverWt_v_hetOverWt.pdf", 
 
 
 ```{r}
+
+fontSiz <- 5
+xL <- c(-6,6)
+yL <- c(-6,6)
 rna.grin2a.psd <- inner_join(grin2a.xls, rna.grin2a, by=c("geneSymbol"="symbol.ko"))
-rna.grin2a.psd <- rna.grin2a.psd %>% mutate(x=log2FoldChange.ko, y=logFC.KO.over.WT)
+rna.grin2a.psd <- rna.grin2a.psd %>% mutate(y=log2FoldChange.ko, x=logFC.KO.over.WT)
 rna.grin2a.psd <- rna.grin2a.psd %>% mutate(rna.ko.sig=ifelse(padj.ko < pVal, 1, 0))
 rna.grin2a.psd <- rna.grin2a.psd %>% mutate(psd.ko.sig=ifelse(P.Value.WT.over.KO < pVal, 2, 0))
-rna.grin2a.psd <- rna.grin2a.psd %>% mutate(rnaPsd.both.sig=as.factor(rna.ko.sig + psd.ko.sig))
+rna.grin2a.psd <- rna.grin2a.psd %>% rowwise() %>% mutate(rnaPsd.both.sig=(sum(rna.ko.sig, psd.ko.sig, na.rm = TRUE)))
 rna.grin2a.psd <- rna.grin2a.psd %>% mutate(color=rnaPsd.both.sig)
 toPlot <- rna.grin2a.psd %>% select(geneSymbol, x, y, color)
 scPlot <- makeScatterPlot(toPlot, lab=c("NS", "Sig. KO/WT (RNA)", "Sig. KO/WT (PSD)", "Sig. Both"))
-scPlot <- scPlot + xlab("Log2-fold change - RNA (KO/WT)") + ylab("Log2-fold change - PSD (KO/WT)")
-scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==3), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25, size=3)
-scPlot <- scPlot + coord_cartesian(xlim=c(-0.5, 0.5), ylim=c(-7,7))
+scPlot <- scPlot + ylab("Log2-fold change - RNA (KO/WT)") + xlab("Log2-fold change - PSD (KO/WT)")
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==3), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25, size=fontSiz, max.overlaps = 20, nudge_y= 2,
+                                     direction    = "x",
+                                     vjust        = 1)
+scPlot <- scPlot + coord_cartesian(ylim=yL, xlim=xL)
 scPlot
 ggsave("~/Google Drive/psp/analysis/plots/grin2a/RNA_koOverWt_v_PSD_koOverWt.pdf", width = plotWidth, height = plotHeight, units = "in")
 
@@ -468,33 +502,35 @@ rna.grin2a.psd <- rna.grin2a.psd %>% mutate(spl.ribo = as.factor(splicing + cyto
 rna.grin2a.psd <- rna.grin2a.psd %>% mutate(color=spl.ribo)
 toPlot <- rna.grin2a.psd %>% select(geneSymbol, x, y, color)
 scPlot <- makeScatterPlot(toPlot, lab <- c("","RNA splicing", "Cytosolic ribosome","Both"))
-scPlot <- scPlot + xlab("Log2-fold change - RNA (KO/WT)") + ylab("Log2-fold change - PSD (KO/WT)")
-scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((y>2 | x > .25) & (color==1 | color==2)), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25, size=3)
-scPlot <- scPlot + coord_cartesian(xlim=c(-0.5, 0.5), ylim=c(-7,7))
+scPlot <- scPlot + ylab("Log2-fold change - RNA (KO/WT)") + xlab("Log2-fold change - PSD (KO/WT)")
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((x>2 | y > .25) & (color==1 | color==2)), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25, size=fontSiz, nudge_x= 2,
+                                     direction    = "y",
+                                    )
+scPlot <- scPlot + coord_cartesian(ylim=yL, xlim=xL)
 scPlot
 ggsave("~/Google Drive/psp/analysis/plots/grin2a/RNA_koOverWt_v_PSD_koOverWt_SPLICING_RIBOSOME.pdf", width = plotWidth, height = plotHeight, units = "in")
 
 
 
-rna.grin2a.psd <- rna.grin2a.psd %>% mutate(x=log2FoldChange.het, y=logFC.Het.over.WT)
+rna.grin2a.psd <- rna.grin2a.psd %>% mutate(y=log2FoldChange.het, x=logFC.Het.over.WT)
 rna.grin2a.psd <- rna.grin2a.psd %>% mutate(rna.het.sig=ifelse(padj.het < pVal, 1, 0))
 rna.grin2a.psd <- rna.grin2a.psd %>% mutate(psd.het.sig=ifelse(P.Value.WT.over.Het < pVal, 2, 0))
-rna.grin2a.psd <- rna.grin2a.psd %>% mutate(rnaPsd.het.both.sig = as.factor(rna.het.sig + psd.het.sig))
+rna.grin2a.psd <- rna.grin2a.psd %>% mutate(rnaPsd.het.both.sig = as.factor(sum(rna.het.sig, psd.het.sig, na.rm = TRUE)))
 rna.grin2a.psd <- rna.grin2a.psd %>% mutate(color=rnaPsd.het.both.sig)
 toPlot <- rna.grin2a.psd %>% select(geneSymbol, x, y, color)
 scPlot <- makeScatterPlot(toPlot, lab=c("NS", "Sig. Het/WT (RNA)", "Sig. Het/WT (PSD)", "Sig. Both"))
-scPlot <- scPlot + xlab("Log2-fold change - RNA (Het/WT)") + ylab("Log2-fold change - PSD (Het/WT)")
-scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==3), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25, size=3)
-scPlot <- scPlot + coord_cartesian(xlim=c(-0.5, 0.5), ylim=c(-7,7))
+scPlot <- scPlot + ylab("Log2-fold change - RNA (Het/WT)") + xlab("Log2-fold change - PSD (Het/WT)")
+scPlot <- scPlot + geom_text_repel(aes(label=ifelse((color==3), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25, size=fontSiz)
+scPlot <- scPlot + coord_cartesian(ylim=yL, xlim=xL)
 scPlot
 ggsave("~/Google Drive/psp/analysis/plots/grin2a/RNA_hetOverWt_v_PSD_hetOverWt.pdf", width = plotWidth, height = plotHeight, units = "in")
 
 rna.grin2a.psd <- rna.grin2a.psd %>% mutate(color=spl.ribo)
 toPlot <- rna.grin2a.psd %>% select(geneSymbol, x, y, color)
 scPlot <- makeScatterPlot(toPlot, lab <- c("","RNA splicing", "Cytosolic ribosome","Both"))
-scPlot <- scPlot + xlab("Log2-fold change - RNA (Het/WT)") + ylab("Log2-fold change - PSD (Het/WT)")
+scPlot <- scPlot + ylab("Log2-fold change - RNA (Het/WT)") + xlab("Log2-fold change - PSD (Het/WT)")
 scPlot <- scPlot + geom_text_repel(aes(label=ifelse(((y>2 | x > 0.25) & (color==1 | color==2)), as.character(geneSymbol), '')), show.legend = FALSE, segment.color='black', segment.size = .5, segment.alpha = .25, size=3)
-scPlot <- scPlot + coord_cartesian(xlim=c(-0.5, 0.5), ylim=c(-7,7))
+scPlot <- scPlot + coord_cartesian(ylim=yL, xlim=xL)
 scPlot
 ggsave("~/Google Drive/psp/analysis/plots/grin2a/RNA_hetOverWt_v_PSD_hetOverWt_SPLICING_RIBOSOME.pdf", width = plotWidth, height = plotHeight, units = "in")
 
@@ -507,8 +543,8 @@ schemaGenes <- as.factor(c("Setd1a", "Cul1", "Xpo7", "Trio", "Cacna1g", "Sp4", "
 schemaGenes.xls <- all.xls %>% select(geneSymbol, geneSymbol.grin2a, geneSymbol.shank3, logFC.KO.over.WT.grin2a, logFC.Het.over.WT.grin2a, logFC.KO.over.WT.shank3, logFC.Het.over.WT.shank3, logFC.KO.over.WT, logFC.Het.over.WT) %>% filter(geneSymbol %in% schemaGenes | geneSymbol.grin2a %in% schemaGenes | geneSymbol.shank3 %in% schemaGenes)
 
 cNames <- colnames(schemaGenes.xls)
-cNames[6] <- paste(cNames[6], ".trio", sep="")
-cNames[7] <- paste(cNames[7], ".trio", sep="")
+cNames[8] <- paste(cNames[8], ".trio", sep="")
+cNames[9] <- paste(cNames[9], ".trio", sep="")
 colnames(schemaGenes.xls) <- cNames
 
 granuleGenes <- read_csv("../data/youn_2018_rna_granule_proteome.csv")
@@ -695,4 +731,3 @@ dev.off()
 
 
 ```
-
