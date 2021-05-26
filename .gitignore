@@ -8,6 +8,7 @@
 *.so
 *.pdf
 *.png
+*.csv
 .Rproj.user
 .Rhistory
 .RData
