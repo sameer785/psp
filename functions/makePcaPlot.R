@@ -11,7 +11,7 @@ makePcaPlot <- function(abundances, color){
 
   
   pca.plot <- pca.plot + th
-  pca.plot <- pca.plot + geom_text_repel(vjust=-1, 
+  pca.plot <- pca.plot + geom_text_repel(vjust= -1, 
                                    label=rownames(t(abundances)), segment.alpha=0.1, alpha=0.1)
   pca.plot <- pca.plot +  theme(legend.position = "none")
   return(pca.plot)

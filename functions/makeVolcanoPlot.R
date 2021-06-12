@@ -22,7 +22,7 @@ makeVolcanoPlot <- function(tbl, xVar, yVar, selLab, cAlph, colCust, legPos){
                            x=xVar,
                            y=yVar,
                            lab=tbl$geneSymbol,
-                           FCcutoff = 1, 
+                           FCcutoff = 2, 
                            gridlines.major = FALSE, 
                            gridlines.minor = FALSE,
                            border = 'partial', 
@@ -40,11 +40,11 @@ makeVolcanoPlot <- function(tbl, xVar, yVar, selLab, cAlph, colCust, legPos){
                            lengthConnectors = unit(0.01,'npc'),
                            widthConnectors=0.3,
                            typeConnectors = "open",
-                           labSize = 5.0,
+                           labSize = 4.0,
                            pointSize = 3
   )
   vPlot <- vPlot + scale_x_continuous(breaks = scales::pretty_breaks(n=10))
   vPlot <- vPlot + scale_y_continuous(breaks = scales::pretty_breaks(n=10))
-  
+
   return(vPlot)
 }

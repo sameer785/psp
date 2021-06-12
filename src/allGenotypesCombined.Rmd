@@ -25,6 +25,8 @@ invisible(lapply(files.sources, source))
 trio.xls <- read_xlsx("../data/results_PSD-Trio-proteome_Two-sample_mod_T_2020-07-24.xlsx")
 shank3.xls <- read_xlsx("../data/results_PSD-Shank3-proteome_Two-sample_mod_T_2020-07-22.xlsx")
 grin2a.xls <- read_xlsx("../data/results_Glun2a-TMT16-Proteome_Two-sample_mod_T_2020-11-30.xlsx")
+akap11.xls <- read_xlsx("../data/Mouse_PSD_Akap11_Proteome_results_MousePSDpr-experiment_Two-sample_mod_T_2021-05-07.xlsx")
+
 goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
 pathways.go <- gmtPathways(goPathways)
 RNA_SPLICING <- str_to_title(pathways.go$GO_RNA_SPLICING)
@@ -93,6 +95,7 @@ setVars<-function(dat.xls){
 trio.xls <- setVars(trio.xls)
 shank3.xls <- setVars(shank3.xls)
 grin2a.xls <- setVars(grin2a.xls)
+akap11.xls <- setVars(akap11.xls)
 ```
 
 ```{r}
@@ -137,6 +140,7 @@ makeAllHetKoPlots <- function(input.xls, inputCount, inputName){
 makeAllHetKoPlots(trio.xls, 66, "trio")
 makeAllHetKoPlots(shank3.xls, 66, "shank3")
 makeAllHetKoPlots(grin2a.xls, 68, "grin2a")
+makeAllHetKoPlots(akap11.xls, 67, "akap11")
 
 ```
 
@@ -154,11 +158,13 @@ makeAllHetKoPlots(grin2a.xls, 68, "grin2a")
 # shank3.xls <- setColNames(shank3.xls, ".shank3")
 # grin2a.xls <- setColNames(grin2a.xls, ".grin2a")
 # 
-all.xls <- inner_join(trio.xls, shank3.xls, by="id")
+all.xls <- inner_join(trio.xls, shank3.xls, by="id", suffix=c(".trio", ".shank3"))
 all.xls <- inner_join(all.xls, grin2a.xls, by="id")
+all.xls <- inner_join(all.xls, akap11.xls, by="id")
 
 all.xls <- full_join(trio.xls, shank3.xls, by="id")
 all.xls <- full_join(all.xls, grin2a.xls, by="id")
+
 ```
 
 
@@ -201,6 +207,7 @@ grin2a.grin2a.abundance.plot <- makeAbundancePlot(grin2a.grin2a.abundance.m)
 ggsave("~/Google Drive/psp/analysis/plots/combined/abundance_grin2a.pdf", width = pWidth, height = pHeight, units="in")
 
 ```
+
 ```{r}
 pWidth = 3
 pHeight = 6
@@ -238,6 +245,16 @@ grin2a.grin2a.abundance.m <- getAbundanceOfProtein(grin2a.xls,
                                                grin2a.sampleSheet)
 grin2a.grin2a.abundance.plot <- makeAbundancePlot(grin2a.grin2a.abundance.m)
 ggsave("~/Google Drive/psp/analysis/plots/combined/abundance_Sfpq_grin2a.pdf", width = pWidth, height = pHeight, units="in")
+
+akap11.abundances <- akap11.xls %>% dplyr::select(starts_with("Akap11_Proteome.."))
+akap11.sampleSheet <- makeSampleSheet(akap11.abundances)
+colnames(akap11.abundances) <- akap11.sampleSheet$cleanId
+akap11.akap11.abundance.m <- getAbundanceOfProtein(akap11.xls, 
+                                               'Q8VIJ6',
+                                               "Akap11_Proteome..", 
+                                               akap11.sampleSheet)
+akap11.akap11.abundance.plot <- makeAbundancePlot(akap11.akap11.abundance.m)
+ggsave("~/Google Drive/psp/analysis/plots/combined/abundance_Sfpq_akap11.pdf", width = pWidth, height = pHeight, units="in")
 
 ```
 
@@ -278,6 +295,17 @@ grin2a.grin2a.abundance.m <- getAbundanceOfProtein(grin2a.xls,
                                                grin2a.sampleSheet)
 grin2a.grin2a.abundance.plot <- makeAbundancePlot(grin2a.grin2a.abundance.m)
 ggsave("~/Google Drive/psp/analysis/plots/combined/abundance_Fus_grin2a.pdf", width = pWidth, height = pHeight, units="in")
+
+akap11.abundances <- akap11.xls %>% dplyr::select(starts_with("Glun2A_PSD_TMT16_Proteome.."))
+akap11.sampleSheet <- makeSampleSheet(akap11.abundances)
+colnames(akap11.abundances) <- akap11.sampleSheet$cleanId
+
+akap11.akap11.abundance.m <- getAbundanceOfProtein(akap11.xls, 
+                                               'P56959',
+                                               "Akap11_Proteome..", 
+                                               akap11.sampleSheet)
+akap11.akap11.abundance.plot <- makeAbundancePlot(akap11.akap11.abundance.m)
+ggsave("~/Google Drive/psp/analysis/plots/combined/abundance_Fus_akap11.pdf", width = pWidth, height = pHeight, units="in")
 
 ```
 
@@ -323,6 +351,7 @@ saveHeatMaps <- function(xlsFile, goTerm, goName){
 
 ```{r}
 saveHeatMaps(all.xls, RNA_SPLICING, "splicing")
+saveHeatMaps(all.xls, CYTOSOLIC_RIBOSOME, "ribosome")
 mitoProComp <- str_to_title(pathways.go$GO_MITOCHONDRIAL_PROTEIN_COMPLEX)
 saveHeatMaps(all.xls, MITOCHONDRIAL_PROTEIN_COMPLEX, "mitochondrial_protein_complex")
 smallGtpaseBinding <- str_to_title(pathways.go$GO_SMALL_GTPASE_BINDING)

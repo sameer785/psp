@@ -3,12 +3,12 @@ makeHeatMap <- function(bigTab, geneList){
 
   currTab <- bigTab %>% 
     filter(geneSymbol.x %in% geneList ) %>%
-    select(geneSymbol.x, starts_with("Trio_PSD_TMT11_Proteome.."), starts_with("Shank3_PSD_TMT11_Proteome.."), starts_with("Glun2A_PSD_TMT16_Proteome.."))
+    select(geneSymbol.x, starts_with("Trio_PSD_TMT11_Proteome.."), starts_with("Shank3_PSD_TMT11_Proteome.."), starts_with("Glun2A_PSD_TMT16_Proteome.."), starts_with("Akap11_Proteome.."))
   
   
   joint.sampleSheet <- makeSampleSheet(currTab %>% select(-c(geneSymbol.x)))
   colnames(currTab) <- c('geneSymbol', paste(joint.sampleSheet$exptId, '_', joint.sampleSheet$cleanId, sep = ""))
-  currTab <- currTab %>% relocate(geneSymbol, starts_with("Trio_WT"), starts_with("Trio_Het"), starts_with("Trio_KO"), starts_with("Shank3_WT"), starts_with("Shank3_Het"), starts_with("Shank3_KO"), starts_with("Glun2A_WT"),  starts_with("Glun2A_Het"),  starts_with("Glun2A_KO"))
+  currTab <- currTab %>% relocate(geneSymbol, starts_with("Trio_WT"), starts_with("Trio_Het"), starts_with("Trio_KO"), starts_with("Shank3_WT"), starts_with("Shank3_Het"), starts_with("Shank3_KO"), starts_with("Glun2A_WT"),  starts_with("Glun2A_Het"),  starts_with("Glun2A_KO"), starts_with("Akap11_WT"), starts_with("Akap11_Het"), starts_with("Akap11_KO"))
   
   currTab.tmp <- distinct(currTab, geneSymbol, .keep_all = TRUE)
   currTab.mat <- as.data.frame(currTab.tmp %>% select(-c("geneSymbol")))
@@ -17,7 +17,7 @@ makeHeatMap <- function(bigTab, geneList){
   col_fun = colorRamp2(c(-3, 0, 3), c("blue", "white", "red"))
   col_fun(seq(-3, 3))
   
-  hMapLev <- paste(c(rep("Trio",3), rep("Shank3", 3), rep("Glun2A", 3)), c("WT", "Het", "KO"), sep="_")
+  hMapLev <- paste(c(rep("Trio",3), rep("Shank3", 3), rep("Glun2A", 3), rep("Akap11", 3)), c("WT", "Het", "KO"), sep="_")
   currTabHmap <- Heatmap(currTab.mat, 
                         row_names_gp = gpar(fontsize = 7), 
                         cluster_columns = FALSE,
@@ -36,7 +36,10 @@ makeHeatMap <- function(bigTab, geneList){
                       Shank3_KO = currTab.tmp %>% select(starts_with("Shank3_KO")) %>% rowMeans(na.rm = TRUE),
                       Glun2A_WT = currTab.tmp %>% select(starts_with("Glun2A_WT")) %>% rowMeans(na.rm = TRUE),
                       Glun2A_Het = currTab.tmp %>% select(starts_with("Glun2A_Het")) %>% rowMeans(na.rm = TRUE),
-                      Glun2A_KO = currTab.tmp %>% select(starts_with("Glun2A_KO")) %>% rowMeans(na.rm = TRUE)
+                      Glun2A_KO = currTab.tmp %>% select(starts_with("Glun2A_KO")) %>% rowMeans(na.rm = TRUE),
+                      Akap11_WT = currTab.tmp %>% select(starts_with("Akap11_WT")) %>% rowMeans(na.rm = TRUE),
+                      Akap11_Het = currTab.tmp %>% select(starts_with("Akap11_Het")) %>% rowMeans(na.rm = TRUE),
+                      Akap11_KO = currTab.tmp %>% select(starts_with("Akap11_KO")) %>% rowMeans(na.rm = TRUE)
   )
   rownames(currTab.av) <- rNames$geneSymbol
   hc <- hclust(dist(currTab.av, method="euclidean"))
@@ -45,7 +48,7 @@ makeHeatMap <- function(bigTab, geneList){
   currTabAvHmap <- Heatmap(currTab.av,
                           row_names_gp = gpar(fontsize = 7), 
                           cluster_columns = FALSE,
-                          column_split = factor(c(rep("Trio", 3), rep("Shank3",3), rep("Glun2A", 3)), levels=c("Trio", "Shank3", "Glun2A")),
+                          column_split = factor(c(rep("Trio", 3), rep("Shank3",3), rep("Glun2A", 3), rep("Akap11", 3)), levels=c("Trio", "Shank3", "Glun2A", "Akap11")),
                           column_title = NULL,
                           cluster_rows = hc,
                           col = col_fun,
@@ -55,14 +58,16 @@ makeHeatMap <- function(bigTab, geneList){
   
   
   lfcTab <- bigTab %>% filter(geneSymbol.x %in% geneList) %>% select(geneSymbol.x,
+                              logFC.Het.over.WT.trio, 
+                              logFC.KO.over.WT.trio, 
+                              logFC.Het.over.WT.shank3, 
+                              logFC.KO.over.WT.shank3, 
                               logFC.Het.over.WT.x, 
-                              logFC.KO.over.WT.x, 
+                              logFC.KO.over.WT.x,
                               logFC.Het.over.WT.y, 
-                              logFC.KO.over.WT.y, 
-                              logFC.Het.over.WT, 
-                              logFC.KO.over.WT)
+                              logFC.KO.over.WT.y)
   
-  colnames(lfcTab) <- c("geneSymbol", "Trio Het/WT", "Trio KO/WT", "Shank3 Het/WT", "Shank3 KO/WT", "Grin2a Het/WT", "Grin2a KO/WT")
+  colnames(lfcTab) <- c("geneSymbol", "Trio Het/WT", "Trio KO/WT", "Shank3 Het/WT", "Shank3 KO/WT", "Grin2a Het/WT", "Grin2a KO/WT", "Akap11 Het/WT", "AKap11 KO/WT")
   lfcTab.tmp <- distinct(lfcTab, geneSymbol, .keep_all = TRUE)
   lfcTab.mat <- as.data.frame(lfcTab.tmp %>% select(-c("geneSymbol")))
   rNames <- lfcTab.tmp %>% select("geneSymbol")
@@ -74,7 +79,7 @@ makeHeatMap <- function(bigTab, geneList){
   lfcTabHmap <- Heatmap(lfcTab.mat,
                            row_names_gp = gpar(fontsize = 6), 
                            cluster_columns = FALSE,
-                           column_split = factor(c(rep("Trio", 2), rep("Shank3",2), rep("Glun2A", 2)), levels=c("Trio", "Shank3", "Glun2A")),
+                           column_split = factor(c(rep("Trio", 2), rep("Shank3",2), rep("Glun2A", 2), rep("Akap11", 2)), levels=c("Trio", "Shank3", "Glun2A", "Akap11")),
                            column_title = NULL,
                           col = col_fun,
                            cluster_rows = lfc.hc,

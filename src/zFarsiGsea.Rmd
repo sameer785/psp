@@ -61,6 +61,30 @@ zfdat.all.may21 <- zfdat.all.may21.path %>%
   set_names() %>% 
   map(read_xlsx, path = zfdat.all.may21.path, na="NaN")
 
+zfdat.all.may27.path <- "~/Google Drive/psp/data/210526_LFC_HP_12week.xlsx"
+zfdat.all.may27 <- zfdat.all.may27.path %>% 
+  excel_sheets() %>% 
+  set_names() %>% 
+  map(read_xlsx, path = zfdat.all.may27.path, na="NaN")
+
+zfdat.all.jun2.path <- "~/Google Drive/psp/data/210602_LFC_pooled nuclei.xlsx"
+zfdat.all.jun2 <- zfdat.all.jun2.path %>% 
+  excel_sheets() %>% 
+  set_names() %>% 
+  map(read_xlsx, path = zfdat.all.jun2.path, na="NaN")
+
+zfdat.all.jun3.path <- "~/Google Drive/psp/data/210603_LFC_PFC_subclueters.xlsx"
+zfdat.all.jun3 <- zfdat.all.jun3.path %>% 
+  excel_sheets() %>% 
+  set_names() %>% 
+  map(read_xlsx, path = zfdat.all.jun3.path, na="NaN")
+
+zfdat.all.jun9.path <- "~/Google Drive/psp/data/210609_LFC_HP_12w_subtypes.xlsx"
+zfdat.all.jun9 <- zfdat.all.jun9.path %>% 
+  excel_sheets() %>% 
+  set_names() %>% 
+  map(read_xlsx, path = zfdat.all.jun9.path, na="NaN")
+
 ```
 
 
@@ -74,7 +98,7 @@ doGo <- function(tbl){
     currRes <- doGseaZfarsi(currCols, goPathways)
     currResMod <- currRes %>% mutate(leadingEdge = map_chr(leadingEdge, toString))
     resNameBase <- names(tbl[item])
-    resNamePath <- "~/Google Drive/psp/analysis/res_zFarsi/Grin2a-PFC-4w/"
+    resNamePath <- "~/Google Drive/psp/analysis/res_zFarsi/Grin2a-HP-12w-Subclusters/"
     resName <- paste(resNamePath, resNameBase, ".csv", sep="")
     write_csv(currResMod, file = resName)
   }
@@ -104,6 +128,14 @@ zfdat.all.may4 %>% map(doGo)
 zfdat.all.may18 %>% map(doGo)
 
 zfdat.all.may21 %>% map(doGo)
+
+zfdat.all.may27 %>% map(doGo)
+
+zfdat.all.jun2 %>% map(doGo)
+zfdat.all.jun3 %>% map(doGo)
+
+zfdat.all.jun9 %>% map(doGo)
+
 
 ```
 

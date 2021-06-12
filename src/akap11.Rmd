@@ -1,0 +1,157 @@
+---
+title: "Akap11 PSD proteome analysis"
+output: html_notebook
+---
+Sameer Aryal w/ Bryan Song and Borislav Dejanovic
+06/05/2021
+AKAP11 proteome analysis
+
+```{r, message=FALSE}
+rm(list=ls())
+require(readxl)
+require(tidyverse)
+require(tm)
+require(ggfortify)
+require(reshape2)
+require(ggbeeswarm)
+require(EnhancedVolcano)
+require(RColorBrewer)
+require(fgsea)
+require(ComplexHeatmap)
+```
+Loading data and helper functions. 
+
+```{r}
+files.sources = list.files("../functions" , full.names = TRUE)
+invisible(lapply(files.sources, source))
+akap11.xls <- read_xlsx("../data/Mouse_PSD_Akap11_Proteome_results_MousePSDpr-experiment_Two-sample_mod_T_2021-05-07.xlsx")
+akap11.xls <- akap11.xls %>% drop_na(logFC.WT.over.KO)
+#akap11.xls <- akap11.xls %>% filter(akap11_PSD_TMT11_Proteome.numSpectra > 5)
+```
+Does the data have any underlying structure?
+
+```{r}
+akap11.abundances <- akap11.xls %>% dplyr::select(starts_with("Akap11_Proteome.."))
+
+#Renaming columns for clarity
+akap11.sampleSheet <- makeSampleSheet(akap11.abundances)
+colnames(akap11.abundances) <- akap11.sampleSheet$cleanId
+
+
+# Remove any rows with NA
+akap11.abundances.clean <- na.omit(akap11.abundances)
+akap11.abundances.pca.plot <- makePcaPlot(akap11.abundances.clean, as.factor(akap11.sampleSheet$color))
+akap11.abundances.pca.plot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/akap11/pca.pdf", width = 8, height = 6, units = "in")
+
+```
+
+How does expresssion of Akap11 vary with genotype?
+```{r}
+# Check abundance of Trio protein
+akap11.akap11.abundance.m <- getAbundanceOfProtein(akap11.xls, 
+                                             'E9Q774',
+                                             "Akap11_Proteome..", 
+                                             akap11.sampleSheet)
+akap11.akap11.abundance.plot <- makeAbundancePlot(akap11.akap11.abundance.m)
+akap11.akap11.abundance.plot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/akap11/abundance_Akap11.pdf", width = 8, height = 6, units = "in")
+```
+
+
+The following plot shows the distribution of FDR adjusted p-values. Looks like a good number of proteins are deferentially expressed in the PSD of Akapa11 KO animals, whereas few are altered in Hets. 
+
+```{r}
+plot(density(akap11.xls$adj.P.Val.WT.over.KO), xlim=c(0,1))
+plot(density(akap11.xls$adj.P.Val.WT.over.Het), xlim=c(0,1))
+```
+```{r}
+pVal <- 0.05
+sum(akap11.xls$adj.P.Val.WT.over.KO < pVal)
+sum(akap11.xls$adj.P.Val.WT.over.Het < pVal)
+sum(akap11.xls$P.Value.WT.over.KO < pVal)
+sum(akap11.xls$P.Value.WT.over.Het < pVal)
+```
+
+Which proteins are the most consistently altered across replicates? Plotting LFC(KO/WT) against nominal p-value.
+
+```{r}
+#Plotting FDR adjusted p value against LFC
+akap11.xls <- akap11.xls %>% dplyr::mutate(logFC.KO.over.WT = logFC.WT.over.KO*(-1))
+akap11.xls <- akap11.xls %>% dplyr::mutate(logFC.Het.over.WT = logFC.WT.over.Het*(-1))
+
+vPlot <- makeVolcanoPlot(akap11.xls,,'adj.P.Val.WT.over.KO')
+vPlot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/akap11/volcano_2fc_2p_PADJ_KO_v_WT.pdf", width = 8, height = 6, units = "in")
+vPlot <- makeVolcanoPlot(akap11.xls,'logFC.Het.over.WT','adj.P.Val.WT.over.KO')
+vPlot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/akap11/volcano_2fc_2p_PADJ_Het_v_WT.pdf", width = 8, height = 6, units = "in")
+```
+```{r}
+large <- akap11.xls %>% filter(logFC.KO.over.WT > 2 & P.Value.WT.over.KO < 10e-4) %>% select(geneSymbol)
+small <- akap11.xls %>% filter(logFC.KO.over.WT < -2 & P.Value.WT.over.KO < 10e-4) %>% select(geneSymbol)
+allGenes <- rbind(large,small)
+vPlot <- makeVolcanoPlot(akap11.xls,,,allGenes$geneSymbol)
+vPlot
+ggsave(filename = "~/Google Drive/psp/analysis/plots/akap11/volcano_2fc.pdf", width = 8, height = 6, units = "in")
+```
+```{r}
+akap11.xls <- akap11.xls %>% mutate(t.KO.over.WT = t.WT.over.KO*(-1))
+goPathways <- "~/Google Drive/geneSets/mSigDb/v7_2/ontology/c5.all.v7.2.symbols.gmt"
+akap11.go <- doGoAnalysis(akap11.xls, goPathways, "t.KO.over.WT")
+akap11.go %>% DT::datatable()
+akap11.go.up <- akap11.go %>% filter(NES > 0)
+akap11.go.up %>% DT::datatable()
+akap11.go.down <- akap11.go %>% filter(NES < 0)
+akap11.go.down %>% DT::datatable()
+```
+
+```{r}
+goChars <- gmtPathways(goPathways)
+rnaSplicing <- str_to_title(goChars$GO_RNA_SPLICING)
+cytosolicRibosome <- str_to_title(goChars$GO_CYTOSOLIC_RIBOSOME)
+
+colSplicing <- akap11.xls %>% transmute(colorSplicing=ifelse(geneSymbol %in% rnaSplicing, 1, 0))
+colSplicing <- colSplicing$colorSplicing
+
+ keyvals <- ifelse(
+    colSplicing, 'gold', 'black')
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'gold'] <- 'RNA Splicing'
+  names(keyvals)[keyvals == 'black'] <- 'Other'
+  
+vPlot5 <- makeVolcanoPlot(akap11.xls,,,rnaSplicing,,keyvals)
+vPlot5
+```
+
+```{r}
+akap11.xls <- akap11.xls %>% mutate(rnaSplicing=ifelse(geneSymbol %in% rnaSplicing, 1, 0), 
+                                    x=logFC.KO.over.WT, 
+                                    y= -1*log10(adj.P.Val.WT.over.KO),
+                                    cytosolicRibosome=ifelse(geneSymbol %in% cytosolicRibosome, 2, 0)) 
+akap11.xls <- akap11.xls %>% mutate(color = as.factor(rnaSplicing + cytosolicRibosome))
+plt <-makeVolcanoScatter(akap11.xls, c("RNA Splicing", "Cytosolic Ribosome", "Both"))
+plt <- plt + geom_text_repel(aes(label=ifelse((x > 2), as.character(geneSymbol), '')))
+plt
+
+akap11.xls <- akap11.xls %>% mutate(color = rnaSplicing)
+plt <-makeVolcanoScatter(akap11.xls, c("RNA Splicing"))
+plt <- plt + geom_text_repel(aes(label=ifelse((x > 2), as.character(geneSymbol), '')),
+                           show.legend = FALSE, 
+                                       segment.color='black', 
+                                       size = 5, 
+                                       segment.size = 0.5,
+                                       segment.alpha = 0.5,
+                                       min.segment.length = 0,
+                                       box.padding = 0.5,
+                                       max.overlaps = Inf)
+#plt <- plt + ylim(c(0,2)) + xlim(c(-5,5))
+plt 
+
+```
+
+```{r}
+
+```
+
+

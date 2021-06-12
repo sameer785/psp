@@ -1,0 +1,70 @@
+
+
+```{r}
+library(tidyverse)  # attaches purrr and readr
+library(fs)
+data_dir <- "~/Desktop/nonoSections/csv/"
+files.sources = list.files(data_dir , full.names = TRUE)
+areaCutoff <- 16
+
+count <- 1
+results <- data.frame(matrix(nrow = length(files.sources), ncol = 5))
+colnames (results) <- c("Source", "Animal", "Genotype", "Mean Area", "Number of Puncta")
+while(count < length(files.sources) + 1){
+  results[count,4] <- getArea(files.sources[count])
+  results[count,5] <- getPuncta(files.sources[count])
+  tmp <- strsplit(files.sources[count], "_")
+  tmp <- tmp [[1]]
+  results[count,3] <- tmp[7]
+  results[count,2] <- paste(tmp[5], tmp[6], sep="-")
+  results[count, 1] <- basename(files.sources[count])
+  count <- count + 1
+
+}
+
+getArea <- function(tblPath){
+  tbl<-read_csv(tblPath)
+  tbl<- tbl %>% filter(Area < areaCutoff)
+  meanArea <- mean(tbl$Area)
+  return (meanArea)
+}
+
+getPuncta <- function(tblPath){
+  tbl<-read_csv(tblPath)
+  tbl<- tbl %>% filter(Area < areaCutoff)
+  puncta <- dim(tbl)[1]
+  return (puncta)
+}
+
+meanArea <- results[,c(3,4)]
+colnames(meanArea) <- c("genotype", "value")
+meanArea$genotype <- factor(meanArea$genotype, levels=c("WT", "KO"))
+kruskal.test(value ~ genotype, data = meanArea)
+gp <- makeAbundancePlot(meanArea)
+gp <- gp + ylab("Mean area of puncta")
+gp
+ggsave("~/Desktop/nonoSections/results/meanAreaOfPuncta.pdf", width = 8, height = 6, units = "in")
+
+numPuncta <- results[,c(3,5)]
+colnames(numPuncta) <- c("genotype", "value")
+numPuncta$genotype <- factor(numPuncta$genotype, levels=c("WT", "KO"))
+kruskal.test(value ~ genotype, data = numPuncta)
+gp <- makeAbundancePlot(numPuncta)
+gp <- gp + ylab("Number of puncta")
+gp
+ggsave("~/Desktop/nonoSections/results/numberOfPuncta.pdf", width = 8, height = 6, units = "in")
+
+sa<-read_csv(files.sources[1])
+hist(sa$Area)
+hist(log2(sa$Area))
+```
+
+```{r}
+allDat <- allDat %>% mutate(genotype = stringr::str_split(source, "_") %>% map_chr(., 7))
+
+maxSize <- 10
+puncDat <- allDat %>% filter(Area < maxSize)
+allDat <- split
+ 
+```
+
